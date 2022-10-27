@@ -41,18 +41,5 @@ namespace FirstPlugin
         {
        
         }
-
-        bool IsPlaying = false;
-        private void axWindowsMediaPlayer1_PlayStateChange(object sender, AxWMPLib._WMPOCXEvents_PlayStateChangeEvent e)
-        {
-            if (!IsPlaying)
-            {
-                IsPlaying = true;
-            }
-            else
-            {
-                IsPlaying = false;
-            }
-        }
     }
 }
