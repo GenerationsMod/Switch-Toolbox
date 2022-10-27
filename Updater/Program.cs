@@ -173,7 +173,7 @@ namespace Updater
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to download update! {ex.ToString()}");
+                Console.WriteLine($"Failed to download update! {ex}");
                 return false;
             }
         }
