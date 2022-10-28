@@ -18,7 +18,7 @@ namespace Toolbox.Library.Forms
         {
             InitializeComponent();
 
-            chkFlipUvsVertical.Checked = Settings.FlipTexCoordsVertical;
+            chkFlipUvsVertical.Checked = Settings.FixTexCoords;
             exportTexturesChkBox.Checked = Settings.ExportTextures;
         }
 
@@ -27,7 +27,7 @@ namespace Toolbox.Library.Forms
         }
 
         private void chkFlipUvsVertical_CheckedChanged(object sender, EventArgs e) {
-            Settings.FlipTexCoordsVertical = chkFlipUvsVertical.Checked;
+            Settings.FixTexCoords = chkFlipUvsVertical.Checked;
         }
 
         private void stCheckBox1_CheckedChanged(object sender, EventArgs e) {

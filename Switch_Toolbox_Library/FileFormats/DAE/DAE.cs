@@ -23,11 +23,11 @@ namespace Toolbox.Library
             public bool OptmizeZeroWeights = true;
             public bool UseAssimp = false;
             public bool UseVertexColors = false;
-            public bool FlipTexCoordsVertical = true;
+            public bool FixTexCoords = true;
             public bool OnlyExportRiggedBones = false;
             public bool UseTextureChannelComponents = true;
 
-            public bool ApplyUvTransforms = false;
+            public bool ApplyUvTransforms = true;
 
             public bool AddLeafBones = false;
 
@@ -372,9 +372,9 @@ namespace Toolbox.Library
                         Position.Add(vertex.pos.X); Position.Add(vertex.pos.Y); Position.Add(vertex.pos.Z);
                         Normal.Add(vertex.nrm.X); Normal.Add(vertex.nrm.Y); Normal.Add(vertex.nrm.Z);
 
-                        if (settings.FlipTexCoordsVertical)
+                        if (settings.FixTexCoords)
                         {
-                            UV0.Add(vertex.uv0.X < 1 ? vertex.uv0.X : 1f - vertex.uv0.X); UV0.Add(1 - vertex.uv0.Y);
+                            UV0.Add(modifyVertex(vertex.uv0.X)); UV0.Add(1 - vertex.uv0.Y);
                             UV1.Add(vertex.uv1.X < 1 ? vertex.uv1.X : 1f - vertex.uv1.X);
                             UV2.Add(vertex.uv2.X < 1 ? vertex.uv2.X : 1f - vertex.uv2.X);
                         }
@@ -519,6 +519,10 @@ namespace Toolbox.Library
                 System.Windows.Forms.MessageBox.Show($"Exported {FileName} Successfuly!");
         }
 
+        private static float modifyVertex(float uv0X)
+        {
+            return uv0X < 1 ? uv0X : uv0X < 1 ? 1f + uv0X : uv0X;
+        }
 
 
         public List<STGenericObject> objects = new List<STGenericObject>();

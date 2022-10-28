@@ -14,7 +14,9 @@ using Toolbox.Library.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using FirstPlugin;
 using OpenTK.Graphics.OpenGL;
+using Toolbox.Library.Animations;
 using Toolbox.Library.NodeWrappers;
 using Toolbox.Library.Rendering;
 
@@ -74,8 +76,8 @@ namespace Toolbox
             OnMdiWindowClosed();
             ResetMenus();
 
-            bool HasVersionFile = true;
-            VersionCheck version = new VersionCheck(HasVersionFile);
+            var HasVersionFile = true;
+            var version = new VersionCheck(HasVersionFile);
 
             if (HasVersionFile)
             {
@@ -88,8 +90,8 @@ namespace Toolbox
                 version.SaveVersionInfo();
             }
 
-            ThreadStart t = new ThreadStart(UpdateProgram.CheckLatest);
-            Thread thread = new Thread(t);
+            var t = new ThreadStart(UpdateProgram.CheckLatest);
+            var thread = new Thread(t);
             thread.Start();
 
             Application.Idle += Application_Idle;
@@ -118,7 +120,7 @@ namespace Toolbox
             LoadPluginFileContextMenus();
             WindowsExplorer.ExplorerContextMenu.LoadMenus();
 
-            foreach (string file in OpenedFiles)
+            foreach (var file in OpenedFiles)
             {
                 if (File.Exists(file))
                     OpenFile(file);
@@ -128,14 +130,14 @@ namespace Toolbox
 
             if (Runtime.UseDebugDomainExceptionHandler)
             {
-                AppDomain currentDomain = AppDomain.CurrentDomain;
+                var currentDomain = AppDomain.CurrentDomain;
                 currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
             }
         }
 
         public void OpenFiles()
         {
-            foreach (string file in OpenedFiles)
+            foreach (var file in OpenedFiles)
             {
                 if (File.Exists(file))
                     OpenFile(file);
@@ -152,18 +154,18 @@ namespace Toolbox
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
         {
-            Exception e = (Exception)args.ExceptionObject;
+            var e = (Exception)args.ExceptionObject;
             MessageBox.Show("MyHandler caught : " + e.Message);
             MessageBox.Show("Runtime terminating: {0}", args.IsTerminating.ToString());
         }
 
         private void ParseGLVersion()
         {
-            char[] Version = Runtime.openGLVersion.ToCharArray();
+            var Version = Runtime.openGLVersion.ToCharArray();
 
-            char Major = Version[0];
-            char Minor = Version[2];
-            char Minor2 = Version[4];
+            var Major = Version[0];
+            var Minor = Version[2];
+            var Minor2 = Version[4];
 
             int major;
 
@@ -207,7 +209,7 @@ namespace Toolbox
         private void UpdateApplication()
         {
             //Start updating while program is closed
-            Process proc = new Process();
+            var proc = new Process();
             proc.StartInfo.FileName = Path.Combine(Runtime.ExecutableDir, "Updater.exe");
             proc.StartInfo.WorkingDirectory = Runtime.ExecutableDir;
             proc.StartInfo.CreateNoWindow = false;
@@ -225,11 +227,11 @@ namespace Toolbox
         }
 
         private void openFolderToolStripMenuItem_Click(object sender, EventArgs e) {
-            FolderSelectDialog dlg = new FolderSelectDialog();
+            var dlg = new FolderSelectDialog();
             if (dlg.ShowDialog() == DialogResult.OK)
             {
                 var root = new ExplorerFolder(dlg.SelectedPath);
-                ObjectEditor editor = new ObjectEditor();
+                var editor = new ObjectEditor();
                 editor.MdiParent = this;
                 editor.Text = CheckTabDupes(root.Text);
                 editor.AddNode(root);
@@ -239,14 +241,14 @@ namespace Toolbox
 
         private void OpenFileSelect()
         {
-            OpenFileDialog ofd = new OpenFileDialog();
+            var ofd = new OpenFileDialog();
             ofd.Filter = Utils.GetAllFilters(SupportedFormats);
             ofd.Multiselect = true;
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 Cursor.Current = Cursors.WaitCursor;
-                foreach (string file in ofd.FileNames)
+                foreach (var file in ofd.FileNames)
                     OpenFile(file);
 
                 Cursor.Current = Cursors.Default;
@@ -255,14 +257,14 @@ namespace Toolbox
 
         private void openActiveFileToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
+            var ofd = new OpenFileDialog();
             ofd.Filter = Utils.GetAllFilters(SupportedFormats);
             ofd.Multiselect = true;
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 Cursor.Current = Cursors.WaitCursor;
-                foreach (string file in ofd.FileNames)
+                foreach (var file in ofd.FileNames)
                     OpenFile(file, true);
 
                 Cursor.Current = Cursors.Default;
@@ -283,15 +285,15 @@ namespace Toolbox
                 return;
             }
 
-            Type objectType = file.GetType();
+            var objectType = file.GetType();
 
-            bool HasEditorActive = false;
+            var HasEditorActive = false;
             foreach (var inter in objectType.GetInterfaces())
             {
                 if (inter.IsGenericType && inter.GetGenericTypeDefinition() == typeof(IEditor<>))
                 {
-                    MethodInfo method = objectType.GetMethod("OpenForm");
-                    MethodInfo methodFill = objectType.GetMethod("FillEditor");
+                    var method = objectType.GetMethod("OpenForm");
+                    var methodFill = objectType.GetMethod("FillEditor");
                     var control = (UserControl)method.Invoke(file, new object[0]);
                     methodFill.Invoke(file, new object[1] { control });
                     var form = new GenericEditorForm(false, control);
@@ -304,7 +306,7 @@ namespace Toolbox
                 }
                 else if (inter.IsGenericType && inter.GetGenericTypeDefinition() == typeof(IEditorForm<>))
                 {
-                    MethodInfo method = objectType.GetMethod("OpenForm");
+                    var method = objectType.GetMethod("OpenForm");
                     var form = (Form)method.Invoke(file, new object[0]);
                     TabDupeIndex = 0;
                     form.Text = CheckTabDupes(((IFileFormat)file).FileName);
@@ -314,8 +316,8 @@ namespace Toolbox
                 }
             }
 
-            bool IsTreeNode = file is TreeNode;
-            bool IsArchiveFile = file is IArchiveFile;
+            var IsTreeNode = file is TreeNode;
+            var IsArchiveFile = file is IArchiveFile;
 
             if (!IsTreeNode && !IsArchiveFile || HasEditorActive)
             {
@@ -327,9 +329,9 @@ namespace Toolbox
             SetFormatSettings((IFileFormat)file);
 
             //Check for active object editors
-            Form editor = (Form)LibraryGUI.GetActiveForm();
+            var editor = (Form)LibraryGUI.GetActiveForm();
 
-            bool useActiveEditor = false;
+            var useActiveEditor = false;
 
             if (editor != null && editor is ObjectEditor)
             {
@@ -340,7 +342,7 @@ namespace Toolbox
                 }
             }
 
-            bool IsEditorActive = editor != null;
+            var IsEditorActive = editor != null;
 
             if (!useActiveEditor || !IsEditorActive)
             {
@@ -400,7 +402,7 @@ namespace Toolbox
                         //    ((IFIleEditor)ActiveMdiChild).BeforeFileSaved();
                     }
 
-                    string FileName = format.FilePath;
+                    var FileName = format.FilePath;
                     if (!File.Exists(FileName))
                         UseSaveDialog = true;
 
@@ -408,10 +410,10 @@ namespace Toolbox
                     {
                         if (format is VGAdudioFile)
                         {
-                            SaveFileDialog sfd = new SaveFileDialog();
+                            var sfd = new SaveFileDialog();
 
-                            List<IFileFormat> formats = new List<IFileFormat>();
-                            foreach (VGAdudioFile fileFormat in FileManager.GetVGAudioFileFormats())
+                            var formats = new List<IFileFormat>();
+                            foreach (var fileFormat in FileManager.GetVGAudioFileFormats())
                             {
                                 formats.Add((IFileFormat)fileFormat);
                             }
@@ -436,7 +438,7 @@ namespace Toolbox
                         }
                         else
                         {
-                            SaveFileDialog sfd = new SaveFileDialog();
+                            var sfd = new SaveFileDialog();
                             sfd.Filter = Utils.GetAllFilters(format);
                             sfd.FileName = format.FileName;
                             sfd.DefaultExt = Path.GetExtension(format.FilePath);
@@ -475,13 +477,13 @@ namespace Toolbox
                     if (!format.CanSave)
                         return;
 
-                    string FileName = format.FilePath;
+                    var FileName = format.FilePath;
                     if (!File.Exists(FileName))
                         UseSaveDialog = true;
 
                     if (UseSaveDialog)
                     {
-                        SaveFileDialog sfd = new SaveFileDialog();
+                        var sfd = new SaveFileDialog();
                         sfd.Filter = Utils.GetAllFilters(format);
                         sfd.FileName = format.FileName;
 
@@ -541,10 +543,10 @@ namespace Toolbox
             {
                 RecentFiles.RemoveAt(MRUnumber);
             }
-            foreach (string item in RecentFiles)
+            foreach (var item in RecentFiles)
             {
                 //create new menu for each item in list
-                STToolStripItem fileRecent = new STToolStripItem();
+                var fileRecent = new STToolStripItem();
                 fileRecent.Click += RecentFile_click;
                 fileRecent.Text = item;
                 fileRecent.Size = new System.Drawing.Size(170, 40);
@@ -556,9 +558,9 @@ namespace Toolbox
             }
             //writing menu list to file
             //create file called "Recent.txt" located on app folder
-            StreamWriter stringToWrite =
+            var stringToWrite =
             new StreamWriter(Runtime.ExecutableDir + "\\Recent.txt");
-            foreach (string item in RecentFiles)
+            foreach (var item in RecentFiles)
             {
                 stringToWrite.WriteLine(item); //write list to stream
             }
@@ -571,7 +573,7 @@ namespace Toolbox
 
             if (File.Exists(Runtime.ExecutableDir + "\\Recent.txt"))
             {
-                StreamReader listToRead = new StreamReader(Runtime.ExecutableDir + "\\Recent.txt"); //read file stream
+                var listToRead = new StreamReader(Runtime.ExecutableDir + "\\Recent.txt"); //read file stream
                 string line;
                 while ((line = listToRead.ReadLine()) != null) //read each line until end of file
                 {
@@ -580,9 +582,9 @@ namespace Toolbox
                 }
                 listToRead.Close(); //close the stream
             }
-            foreach (string item in RecentFiles)
+            foreach (var item in RecentFiles)
             {
-                STToolStripItem fileRecent = new STToolStripItem();
+                var fileRecent = new STToolStripItem();
                 fileRecent.Click += RecentFile_click;
                 fileRecent.Text = item;
                 fileRecent.Size = new System.Drawing.Size(170, 40);
@@ -618,7 +620,7 @@ namespace Toolbox
 
         private void UpdateToolbar(bool DisplayVersion)
         {
-            string commit = $"Commit: {Runtime.CommitInfo}";
+            var commit = $"Commit: {Runtime.CommitInfo}";
             var asssemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
             if (DisplayVersion)
                 Text = $"{Application.ProductName} | Version: {Runtime.ProgramVersion} | {commit} | Compile Date: {Runtime.CompileDate} Assembly {asssemblyVersion}";
@@ -639,10 +641,10 @@ namespace Toolbox
         private List<IMenuExtension> menuExtentions = new List<IMenuExtension>();
         private void LoadPluginContextMenus(Type[] types)
         {
-            foreach (Type T in types)
+            foreach (var T in types)
             {
-                Type[] interfaces_array = T.GetInterfaces();
-                for (int i = 0; i < interfaces_array.Length; i++)
+                var interfaces_array = T.GetInterfaces();
+                for (var i = 0; i < interfaces_array.Length; i++)
                 {
                     if (interfaces_array[i] == typeof(IMenuExtension))
                     {
@@ -650,7 +652,7 @@ namespace Toolbox
                     }
                 }
             }
-            foreach (IMenuExtension ext in menuExtentions)
+            foreach (var ext in menuExtentions)
             {
                 if (ext.FileMenuExtensions != null)
                     RegisterMenuExtIndex(fileToolStripMenuItem, ext.FileMenuExtensions, fileToolStripMenuItem.DropDownItems.Count); //last items are separator and settings
@@ -665,7 +667,7 @@ namespace Toolbox
 
         private void LoadPluginFileContextMenus()
         {
-            foreach (IFileMenuExtension ext in FileMenuExtensions)
+            foreach (var ext in FileMenuExtensions)
             {
                 if (ext.NewFileMenuExtensions != null)
                     RegisterMenuExtIndex(newToolStripMenuItem, ext.NewFileMenuExtensions, newToolStripMenuItem.DropDownItems.Count);
@@ -690,7 +692,7 @@ namespace Toolbox
         }
         void RegisterMenuExtIndex(ToolStripMenuItem target, STToolStripItem[] list, int index = 0)
         {
-            foreach (STToolStripItem i in list)
+            foreach (var i in list)
             {
                 if (i == null)
                     continue;
@@ -825,7 +827,7 @@ namespace Toolbox
             var menuExtensions = FileManager.GetMenuExtensions(format);
 
             editToolStripMenuItem.DropDownItems.Clear();
-            for (int i = 0; i < stToolStrip1.Items.Count; i++)
+            for (var i = 0; i < stToolStrip1.Items.Count; i++)
             {
                 if (i > 1)
                     stToolStrip1.Items.RemoveAt(i);
@@ -904,11 +906,11 @@ namespace Toolbox
 
             this.SuspendLayout();
 
-            foreach (Form frm in this.MdiChildren) frm.FormBorderStyle = FormBorderStyle.FixedSingle;
+            foreach (var frm in this.MdiChildren) frm.FormBorderStyle = FormBorderStyle.FixedSingle;
 
             LayoutMdi(MdiLayout.TileHorizontal);
 
-            foreach (Form frm in this.MdiChildren) frm.FormBorderStyle = FormBorderStyle.None;
+            foreach (var frm in this.MdiChildren) frm.FormBorderStyle = FormBorderStyle.None;
 
             this.ResumeLayout();
         }
@@ -939,7 +941,7 @@ namespace Toolbox
 
         private void closeAllToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            foreach (Form frm in this.MdiChildren) frm.Close();
+            foreach (var frm in this.MdiChildren) frm.Close();
 
             OnMdiWindowClosed();
 
@@ -991,7 +993,7 @@ namespace Toolbox
                 e.Effect = DragDropEffects.All;
             else
             {
-                String[] strGetFormats = e.Data.GetFormats();
+                var strGetFormats = e.Data.GetFormats();
                 e.Effect = DragDropEffects.None;
             }
         }
@@ -1002,8 +1004,8 @@ namespace Toolbox
 
             Cursor.Current = Cursors.WaitCursor;
 
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (string filename in files)
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            foreach (var filename in files)
             {
                 OpenFile(filename);
             }
@@ -1070,7 +1072,7 @@ namespace Toolbox
                         ((STForm)this.ActiveMdiChild).Maximize();
                     }
 
-                    int tpIndex = 0;
+                    var tpIndex = 0;
                     foreach (TabPage tpCheck in tabForms.TabPages)
                     {
                         if (tpCheck.Text == this.ActiveMdiChild.Text)
@@ -1083,7 +1085,7 @@ namespace Toolbox
 
                     // Add a tabPage to tabControl with child 
                     // form caption 
-                    TabPage tp = new TabPage(this.ActiveMdiChild.Text);
+                    var tp = new TabPage(this.ActiveMdiChild.Text);
                     tp.BackColor = FormThemes.BaseTheme.TabPageInactive;
                     tp.ForeColor = FormThemes.BaseTheme.FormContextMenuForeColor;
                     tp.Tag = this.ActiveMdiChild;
@@ -1101,7 +1103,7 @@ namespace Toolbox
                 else
                 {
                     //Select a tab if it has a tag
-                    int tpIndex = 0;
+                    var tpIndex = 0;
                     foreach (TabPage tpCheck in tabForms.TabPages)
                     {
                         if (tpCheck.Tag == this.ActiveMdiChild)
@@ -1175,13 +1177,13 @@ namespace Toolbox
 
         private void mainSettingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Settings settings = new Settings();
+            var settings = new Settings();
             settings.Show(this);
         }
 
         private void fileAssociationsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            FileAssociationForm form = new FileAssociationForm();
+            var form = new FileAssociationForm();
             form.ShowDialog();
         }
 
@@ -1308,7 +1310,7 @@ namespace Toolbox
 
         private void aboutToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            CreditsWindow window = new CreditsWindow();
+            var window = new CreditsWindow();
             window.Show();
         }
 
@@ -1352,7 +1354,7 @@ namespace Toolbox
 
         private void batchToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            FolderSelectDialog folderDlg = new FolderSelectDialog();
+            var folderDlg = new FolderSelectDialog();
             if (folderDlg.ShowDialog() == DialogResult.OK)
             {
                 STFileSaver.BatchFileTable(folderDlg.SelectedPath);
@@ -1361,18 +1363,18 @@ namespace Toolbox
 
         private void hashCalculatorToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            HashCalculatorForm form = new HashCalculatorForm();
+            var form = new HashCalculatorForm();
             form.Show(this);
         }
 
         private void batchExportTexturesAllSupportedFormatsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
+            var ofd = new OpenFileDialog();
             ofd.Multiselect = true;
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                FolderSelectDialog folderDlg = new FolderSelectDialog();
+                var folderDlg = new FolderSelectDialog();
                 if (folderDlg.ShowDialog() == DialogResult.OK) {
                     BatchExportTextures(ofd.FileNames, folderDlg.SelectedPath);
                 }
@@ -1382,12 +1384,12 @@ namespace Toolbox
 
         private void batchExportModelsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog();
+            var ofd = new OpenFileDialog();
             ofd.Multiselect = true;
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                FolderSelectDialog folderDlg = new FolderSelectDialog();
+                var folderDlg = new FolderSelectDialog();
                 if (folderDlg.ShowDialog() == DialogResult.OK) {
                     BatchExportModels(ofd.FileNames, folderDlg.SelectedPath);
                 }
@@ -1398,15 +1400,14 @@ namespace Toolbox
         private List<string> batchExportFileList = new List<string>();
         private void BatchExportModels(string[] files, string outputFolder)
         {
-            List<string> Formats = new List<string>();
-            Formats.Add("DAE (.dae)");
+            var Formats = new List<string> { "DAE (.dae)" };
 
             failedFiles = new List<string>();
 
-            BatchFormatExport form = new BatchFormatExport(Formats);
+            var form = new BatchFormatExport(Formats);
             if (form.ShowDialog() == DialogResult.OK)
             {
-                string extension = form.GetSelectedExtension();
+                var extension = form.GetSelectedExtension();
                 foreach (var file in files)
                 {
                     IFileFormat fileFormat = null;
@@ -1419,7 +1420,7 @@ namespace Toolbox
                         failedFiles.Add($"{file} \n Error:\n {ex} \n");
                     }
 
-                    SearchFileFormat(form.BatchSettings, fileFormat, extension, outputFolder, ExportMode.Models);
+                    SearchFileFormat(form.BatchSettings, fileFormat, extension, outputFolder, ExportMode.Models, new List<GFBMDL>());
                 }
                 batchExportFileList.Clear();
             }
@@ -1428,7 +1429,7 @@ namespace Toolbox
 
             if (failedFiles.Count > 0)
             {
-                string detailList = "";
+                var detailList = "";
                 foreach (var file in failedFiles)
                     detailList += $"{file}\n";
 
@@ -1440,7 +1441,7 @@ namespace Toolbox
 
         private void BatchExportTextures(string[] files, string outputFolder)
         {
-            List<string> Formats = new List<string>();
+            var Formats = new List<string>();
             Formats.Add("Portable Graphics Network (.png)");
             Formats.Add("Microsoft DDS (.dds)");
             Formats.Add("Joint Photographic Experts Group (.jpg)");
@@ -1450,10 +1451,10 @@ namespace Toolbox
 
            failedFiles = new List<string>();
 
-            BatchFormatExport form = new BatchFormatExport(Formats);
+            var form = new BatchFormatExport(Formats);
             if (form.ShowDialog() == DialogResult.OK)
             {
-                string extension = form.GetSelectedExtension();
+                var extension = form.GetSelectedExtension();
                 foreach (var file in files)
                 {
                     IFileFormat fileFormat = null;
@@ -1466,14 +1467,14 @@ namespace Toolbox
                         failedFiles.Add($"{file} \n Error:\n {ex} \n");
                     }
 
-                    SearchFileFormat(form.BatchSettings, fileFormat, extension, outputFolder, ExportMode.Textures);
+                    SearchFileFormat(form.BatchSettings, fileFormat, extension, outputFolder, ExportMode.Textures, new List<GFBMDL>());
                 }
                 batchExportFileList.Clear();
             }
 
             if (failedFiles.Count > 0)
             {
-                string detailList = "";
+                var detailList = "";
                 foreach (var file in failedFiles)
                     detailList += $"{file}\n";
 
@@ -1483,50 +1484,56 @@ namespace Toolbox
                 MessageBox.Show("Files batched successfully!");
         }
 
-        private void SearchFileFormat(BatchFormatExport.Settings settings, IFileFormat fileFormat, 
-            string extension, string outputFolder, ExportMode exportMode)
+        private void SearchFileFormat(BatchFormatExport.Settings settings, IFileFormat fileFormat,
+            string extension, string outputFolder, ExportMode exportMode, List<GFBMDL> modelFile)
         {
             if (fileFormat == null) return;
 
-            if (fileFormat is STGenericTexture && exportMode == ExportMode.Textures) {
-                string name = ((STGenericTexture)fileFormat).Text;
-                ExportTexture(((STGenericTexture)fileFormat), settings, $"{outputFolder}/{name}", extension);
-            }
-            else if (fileFormat is IArchiveFile)
-                SearchArchive(settings, (IArchiveFile)fileFormat, extension, outputFolder, exportMode);
-            else if (fileFormat is ITextureContainer && exportMode == ExportMode.Textures)
+            if (fileFormat is GFBMDL m)
             {
-                string name = fileFormat.FileName.Split('.').FirstOrDefault();
+                modelFile.Clear();
+                modelFile.Add(m);
+            }
+
+            if (fileFormat is STGenericTexture texture && exportMode == ExportMode.Textures) {
+                var name = texture.Text;
+                ExportTexture(texture, settings, $"{outputFolder}/{name}", extension);
+            }
+            else if (fileFormat is IArchiveFile file)
+                SearchArchive(settings, file, extension, outputFolder, exportMode);
+            else if (fileFormat is ITextureContainer container && exportMode == ExportMode.Textures)
+            {
+                var name = fileFormat.FileName.Split('.').FirstOrDefault();
                 if (settings.SeperateTextureContainers)
                     outputFolder = Path.Combine(outputFolder, name);
 
-                if (((ITextureContainer)fileFormat).TextureList.Count > 0)
+                if (container.TextureList.Count > 0)
                 {
                     if (!Directory.Exists(outputFolder))
                         Directory.CreateDirectory(outputFolder);
                 }
 
-                foreach (STGenericTexture tex in ((ITextureContainer)fileFormat).TextureList) {
+                foreach (var tex in container.TextureList) {
                     ExportTexture(tex, settings, $"{outputFolder}/{tex.Text}", extension);
                 }
             }
             else if (fileFormat is IExportableModelContainer && exportMode == ExportMode.Models)
             {
-                string name = fileFormat.FileName.Split('.').FirstOrDefault();
+                var name = fileFormat.FileName.Split('.').FirstOrDefault();
                 if (settings.SeperateTextureContainers)
                     outputFolder = Path.Combine(outputFolder, name);
 
                 if (!Directory.Exists(outputFolder))
                     Directory.CreateDirectory(outputFolder);
 
-                DAE.ExportSettings daesettings = new DAE.ExportSettings();
+                var daesettings = new DAE.ExportSettings();
                 daesettings.SuppressConfirmDialog = true;
                 daesettings.ExportTextures = settings.ExportTextures;
 
                 var textures = ((IExportableModelContainer)fileFormat).ExportableTextures.ToList();
                 foreach (var model in ((IExportableModelContainer)fileFormat).ExportableModels)
                 {
-                    string path = $"{outputFolder}/{model.Text}";
+                    var path = $"{outputFolder}/{model.Text}";
                     path = Utils.RenameDuplicateString(batchExportFileList, path, 0, 3);
 
                     DAE.Export($"{path}.{extension}", daesettings, model, textures, model.GenericSkeleton);
@@ -1535,14 +1542,14 @@ namespace Toolbox
             }
             else if (fileFormat is IExportableModel && exportMode == ExportMode.Models)
             {
-                string name = fileFormat.FileName.Split('.').FirstOrDefault();
+                var name = fileFormat.FileName.Split('.').FirstOrDefault();
                 if (settings.SeperateTextureContainers)
                     outputFolder = Path.Combine(outputFolder, name);
 
                 if (!Directory.Exists(outputFolder))
                     Directory.CreateDirectory(outputFolder);
 
-                DAE.ExportSettings daesettings = new DAE.ExportSettings();
+                var daesettings = new DAE.ExportSettings();
                 daesettings.SuppressConfirmDialog = true;
                 daesettings.ExportTextures = settings.ExportTextures;
 
@@ -1551,8 +1558,8 @@ namespace Toolbox
                 model.Objects = ((IExportableModel)fileFormat).ExportableMeshes;
                 var textures = ((IExportableModel)fileFormat).ExportableTextures.ToList();
                 var skeleton = ((IExportableModel)fileFormat).ExportableSkeleton;
-                string modelname = Path.GetFileNameWithoutExtension(fileFormat.FileName);
-                string path = $"{outputFolder}/{modelname}";
+                var modelname = Path.GetFileNameWithoutExtension(fileFormat.FileName);
+                var path = $"{outputFolder}/{modelname}";
                 path = Utils.RenameDuplicateString(batchExportFileList, path, 0, 3);
                 batchExportFileList.Add(path);
 
@@ -1573,7 +1580,7 @@ namespace Toolbox
             batchExportFileList.Add(filePath);
 
             //Switch the runtime comp setting to the batch settings then switch back later
-            bool compSetting = Runtime.ImageEditor.UseComponetSelector;
+            var compSetting = Runtime.ImageEditor.UseComponetSelector;
 
             Runtime.ImageEditor.UseComponetSelector = settings.UseTextureChannelComponents;
             tex.Export($"{filePath}.{ext}");
@@ -1583,20 +1590,31 @@ namespace Toolbox
         private void SearchArchive(BatchFormatExport.Settings settings, IArchiveFile archiveFile,
             string extension, string outputFolder, ExportMode exportMode)
         {
-            string ArchiveFilePath = outputFolder;
+            var modelFile = new List<GFBMDL>();
+            var animations = new List<GFBANM>();
+            var archiveFilePath = outputFolder;
             if (settings.SeperateArchiveFiles)
-                ArchiveFilePath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(((IFileFormat)archiveFile).FileName));
+                archiveFilePath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(((IFileFormat)archiveFile).FileName));
 
             foreach (var file in archiveFile.Files)
             {
                 try
                 {
-                    SearchFileFormat(settings, file.OpenFile(), extension, ArchiveFilePath, exportMode);
+                    var format = file.OpenFile();
+                    if (format is GFBANM anm) animations.Add(anm);
+                    
+                    SearchFileFormat(settings, format, extension, archiveFilePath, exportMode, modelFile);
                 }
                 catch (Exception ex)
                 {
                     failedFiles.Add($"{file} \n Error:\n {ex} \n");
                 }
+            }
+
+            if (modelFile.Count <= 0) return;
+            foreach (var animation in animations)
+            {
+                SMD.Save((STSkeletonAnimation) animation.AnimationController, modelFile[0].Model.Skeleton, Path.Combine(outputFolder, animation.FileName + ".smd"));
             }
         }
     }
