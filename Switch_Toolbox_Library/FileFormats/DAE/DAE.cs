@@ -21,13 +21,13 @@ namespace Toolbox.Library
         {
             public bool SuppressConfirmDialog = false;
             public bool OptmizeZeroWeights = true;
-            public bool UseOldExporter = false;
-            public bool UseVertexColors = true;
+            public bool UseAssimp = false;
+            public bool UseVertexColors = false;
             public bool FlipTexCoordsVertical = true;
             public bool OnlyExportRiggedBones = false;
             public bool UseTextureChannelComponents = true;
 
-            public bool TransformColorUVs = false;
+            public bool ApplyUvTransforms = false;
 
             public bool AddLeafBones = false;
 
@@ -61,12 +61,12 @@ namespace Toolbox.Library
 
         public static void Export(string FileName, ExportSettings settings, 
             List<STGenericObject> Meshes, List<STGenericMaterial> Materials,
-            List<STGenericTexture> Textures, STSkeleton skeleton = null, List<int> NodeArray = null)
+            List<STGenericTexture> Textures, STSkeleton skeleton = null, List<int> boneIndices = null)
         {
             if (Materials == null)
                 Materials = new List<STGenericMaterial>();
             if (skeleton != null && skeleton.BoneIndices != null)
-                NodeArray = skeleton.BoneIndices.ToList();
+                boneIndices = skeleton.BoneIndices.ToList();
 
             List<string> failedTextureExport = new List<string>();
 
@@ -74,17 +74,22 @@ namespace Toolbox.Library
             progressBar.Task = "Exporting Model...";
             progressBar.Value = 0;
             progressBar.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            progressBar.Show();
-            progressBar.Refresh();
 
-            if (settings.UseOldExporter)
+            if (settings.UseAssimp)
             {
-                AssimpSaver saver = new AssimpSaver();
-                STGenericModel model = new STGenericModel();
-                model.Objects = Meshes;
-                model.Materials = Materials;
-                saver.SaveFromModel(model, FileName, Textures, skeleton, NodeArray);
+                var saver = new AssimpSaver();
+                var model = new STGenericModel
+                {
+                    Objects = Meshes,
+                    Materials = Materials
+                };
+                saver.SaveFromModel(model, FileName, Textures, skeleton, boneIndices);
                 return;
+            }
+            else
+            {
+                progressBar.Show();
+                progressBar.Refresh();
             }
 
             string TexturePath = System.IO.Path.GetDirectoryName(FileName);
@@ -223,8 +228,8 @@ namespace Toolbox.Library
                                 for (int j = 0; j < vertex.boneIds.Count; j++)
                                 {
                                     int id = -1;
-                                    if (NodeArray != null && NodeArray.Count > vertex.boneIds[j]) {
-                                        id = NodeArray[vertex.boneIds[j]];
+                                    if (boneIndices != null && boneIndices.Count > vertex.boneIds[j]) {
+                                        id = boneIndices[vertex.boneIds[j]];
                                     }
                                     else
                                         id = vertex.boneIds[j];
@@ -248,14 +253,14 @@ namespace Toolbox.Library
                         var inverse = skeleton.GetBoneTransform(bone).Inverted();
                         var transform = bone.GetTransform();
 
-                        float[] Transform = new float[] {
+                        float[] Transform = {
                        transform.M11, transform.M21, transform.M31, transform.M41,
                        transform.M12, transform.M22, transform.M32, transform.M42,
                        transform.M13, transform.M23, transform.M33, transform.M43,
                        transform.M14, transform.M24, transform.M34, transform.M44
                         };
 
-                        float[] InvTransform = new float[] {
+                        float[] InvTransform = {
                       inverse.M11, inverse.M21, inverse.M31, inverse.M41,
                       inverse.M12, inverse.M22, inverse.M32, inverse.M42,
                       inverse.M13, inverse.M23, inverse.M33, inverse.M43,
@@ -280,8 +285,8 @@ namespace Toolbox.Library
                     progressBar.Refresh();
 
                     int[] IndexTable = null;
-                    if (NodeArray != null)
-                        IndexTable = NodeArray.ToArray();
+                    if (boneIndices != null)
+                        IndexTable = boneIndices.ToArray();
 
                     writer.StartGeometry(mesh.Text);
 
@@ -292,7 +297,7 @@ namespace Toolbox.Library
                     }
 
 
-                    if (settings.TransformColorUVs)
+                    if (settings.ApplyUvTransforms)
                     {
                         List<Vertex> transformedVertices = new List<Vertex>();
                         foreach (var poly in mesh.PolygonGroups)
@@ -307,7 +312,7 @@ namespace Toolbox.Library
                                     break;
 
                                 var diffuse = mat.TextureMaps.FirstOrDefault(x => x.Type == STGenericMatTexture.TextureType.Diffuse);
-                                STTextureTransform transform = new STTextureTransform();
+                                var transform = new STTextureTransform();
                                 if (diffuse != null)
                                     transform = diffuse.Transform;
 
@@ -316,15 +321,18 @@ namespace Toolbox.Library
                                 var vertexC = mesh.vertices[faces[v+2]];
 
                                 if (!transformedVertices.Contains(vertexA)) {
-                                    vertexA.uv0 = (vertexA.uv0 * transform.Scale) + transform.Translate;
+                                    vertexA.uv0 = vertexA.uv0 * transform.Scale + transform.Translate;
+                                    // if (vertexA.uv0.X > 1f) vertexA.uv0.X -= 1.0f;
                                     transformedVertices.Add(vertexA);
                                 }
                                 if (!transformedVertices.Contains(vertexB)) {
-                                    vertexB.uv0 = (vertexB.uv0 * transform.Scale) + transform.Translate;
+                                    vertexB.uv0 = vertexB.uv0 * transform.Scale + transform.Translate;
+                                    // if (vertexA.uv0.X > 1) vertexA.uv0.X -= 1.0f;
                                     transformedVertices.Add(vertexB);
                                 }
                                 if (!transformedVertices.Contains(vertexC)) {
-                                    vertexC.uv0 = (vertexC.uv0 * transform.Scale) + transform.Translate;
+                                    vertexC.uv0 = vertexC.uv0 * transform.Scale + transform.Translate;
+                                    // if (vertexA.uv0.X > 1) vertexA.uv0.X -= 1.0f;
                                     transformedVertices.Add(vertexC);
                                 }
                             }
@@ -366,9 +374,9 @@ namespace Toolbox.Library
 
                         if (settings.FlipTexCoordsVertical)
                         {
-                            UV0.Add(vertex.uv0.X); UV0.Add(1 - vertex.uv0.Y);
-                            UV1.Add(vertex.uv1.X); UV1.Add(1 - vertex.uv1.Y);
-                            UV2.Add(vertex.uv2.X); UV2.Add(1 - vertex.uv2.Y);
+                            UV0.Add(vertex.uv0.X < 1 ? vertex.uv0.X : 1f - vertex.uv0.X); UV0.Add(1 - vertex.uv0.Y);
+                            UV1.Add(vertex.uv1.X < 1 ? vertex.uv1.X : 1f - vertex.uv1.X);
+                            UV2.Add(vertex.uv2.X < 1 ? vertex.uv2.X : 1f - vertex.uv2.X);
                         }
                         else
                         {

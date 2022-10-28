@@ -564,9 +564,11 @@ namespace Toolbox.Library.Forms
 
         public void ExportModel(IExportableModel exportableModel, string fileName, DAE.ExportSettings settings)
         {
-            var model = new STGenericModel();
-            model.Materials = exportableModel.ExportableMaterials;
-            model.Objects = exportableModel.ExportableMeshes;
+            var model = new STGenericModel
+            {
+                Materials = exportableModel.ExportableMaterials,
+                Objects = exportableModel.ExportableMeshes
+            };
             var textures = new List<STGenericTexture>();
             foreach (var tex in exportableModel.ExportableTextures)
                 textures.Add(tex);

@@ -60,7 +60,7 @@ namespace FlatTabControl
 			//leftRightImages.ImageSize = new Size(16, 16); // default
 
 			System.Resources.ResourceManager resources = new System.Resources.ResourceManager(typeof(FlatTabControl));
-			Bitmap updownImage = ((System.Drawing.Bitmap)(resources.GetObject("TabIcons.bmp")));
+			Bitmap updownImage = null; // ((System.Drawing.Bitmap)(resources.GetObject("TabIcons.bmp")));
 			
 			if (updownImage != null)
 			{

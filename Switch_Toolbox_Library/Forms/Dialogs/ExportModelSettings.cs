@@ -31,7 +31,7 @@ namespace Toolbox.Library.Forms
         }
 
         private void stCheckBox1_CheckedChanged(object sender, EventArgs e) {
-            Settings.UseOldExporter = chkOldExporter.Checked;
+            Settings.UseAssimp = chkOldExporter.Checked;
         }
 
         private void chkVertexColors_CheckedChanged(object sender, EventArgs e) {
@@ -48,7 +48,7 @@ namespace Toolbox.Library.Forms
         }
 
         private void chkApplyUVTransforms_CheckedChanged(object sender, EventArgs e) {
-            Settings.TransformColorUVs = chkApplyUVTransforms.Checked;
+            Settings.ApplyUvTransforms = chkApplyUVTransforms.Checked;
         }
 
         private void chkTextureChannelComps_CheckedChanged(object sender, EventArgs e) {

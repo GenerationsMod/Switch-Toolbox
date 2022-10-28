@@ -116,7 +116,7 @@
             this.chkOldExporter.Name = "chkOldExporter";
             this.chkOldExporter.Size = new System.Drawing.Size(200, 17);
             this.chkOldExporter.TabIndex = 15;
-            this.chkOldExporter.Text = "Use Old Exporter (If new one breaks)";
+            this.chkOldExporter.Text = "Use Old Exporter (Based on Assimp. Doesnt Apply UV's Correctly)";
             this.chkOldExporter.UseVisualStyleBackColor = true;
             this.chkOldExporter.CheckedChanged += new System.EventHandler(this.stCheckBox1_CheckedChanged);
             // 

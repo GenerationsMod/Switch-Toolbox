@@ -14,116 +14,113 @@ namespace Toolbox.Library
 {
     public class AssimpSaver
     {
-        private List<string> ExtractedTextures = new List<string>();
-
+        private List<string> _extractedTextures = new List<string>();
         public List<string> BoneNames = new List<string>();
+        STProgressBar _progressBar;
 
-        STProgressBar progressBar;
-
-        public void SaveFromModel(STGenericModel model, string FileName, List<STGenericTexture> Textures, STSkeleton skeleton = null, List<int> NodeArray = null)
+        public void SaveFromModel(STGenericModel model, string fileName, List<STGenericTexture> textures, STSkeleton skeleton = null, List<int> nodeArray = null)
         {
-            SaveFromModel(model.Objects.ToList(), model.Materials.ToList(), FileName, Textures, skeleton, NodeArray);
+            SaveFromModel(model.Objects.ToList(), model.Materials.ToList(), fileName, textures, skeleton, nodeArray);
         }
 
-        public void SaveFromModel(List<STGenericObject> Meshes, List<STGenericMaterial> Materials, string FileName, List<STGenericTexture> Textures, STSkeleton skeleton = null, List<int> NodeArray = null)
+        public void SaveFromModel(List<STGenericObject> meshes, List<STGenericMaterial> materials, string fileName, List<STGenericTexture> textures, STSkeleton skeleton = null, List<int> nodeArray = null)
         {
-            ExtractedTextures.Clear();
+            _extractedTextures.Clear();
 
-            Scene scene = new Scene();
-            scene.RootNode = new Node("RootNode");
+            var scene = new Scene
+            {
+                RootNode = new Node("RootNode")
+            };
 
-            progressBar = new STProgressBar();
-            progressBar.Task = "Exporting Skeleton...";
-            progressBar.Value = 0;
-            progressBar.StartPosition = FormStartPosition.CenterScreen;
-            progressBar.Show();
-            progressBar.Refresh();
+            _progressBar = new STProgressBar();
+            _progressBar.Task = "Exporting Skeleton...";
+            _progressBar.Value = 0;
+            _progressBar.StartPosition = FormStartPosition.CenterScreen;
+            _progressBar.Show();
+            _progressBar.Refresh();
 
             SaveSkeleton(skeleton, scene.RootNode);
-            SaveMaterials(scene, Materials, FileName, Textures);
+            SaveMaterials(scene, materials, fileName, textures);
 
-            progressBar.Task = "Exporting Meshes...";
-            progressBar.Value = 50;
+            _progressBar.Task = "Exporting Meshes...";
+            _progressBar.Value = 50;
 
-            SaveMeshes(scene, Meshes, skeleton, FileName, NodeArray);
+            SaveMeshes(scene, meshes, skeleton, fileName, nodeArray);
 
-            progressBar.Task = "Saving File...";
-            progressBar.Value = 80;
+            _progressBar.Task = "Saving File...";
+            _progressBar.Value = 80;
 
-            SaveScene(FileName, scene, Meshes);
+            SaveScene(fileName, scene, meshes);
 
-            progressBar.Value = 100;
-            progressBar.Close();
-            progressBar.Dispose();
+            _progressBar.Value = 100;
+            _progressBar.Close();
+            _progressBar.Dispose();
         }
 
-        private void SaveScene(string FileName, Scene scene, List<STGenericObject> Meshes)
+        private void SaveScene(string fileName, Scene scene, List<STGenericObject> meshes)
         {
             using (var v = new AssimpContext())
             {
-                string ext = System.IO.Path.GetExtension(FileName);
+                var ext = System.IO.Path.GetExtension(fileName);
 
-                string formatID = "collada";
+                var formatId = "collada";
                 if (ext == ".obj")
-                    formatID = "obj";
+                    formatId = "obj";
                 if (ext == ".3ds")
-                    formatID = "3ds";
+                    formatId = "3ds";
                 if (ext == ".dae")
-                    formatID = "collada";
+                    formatId = "collada";
                 if (ext == ".ply")
-                    formatID = "ply";
+                    formatId = "ply";
 
-                bool ExportSuccessScene = v.ExportFile(scene, FileName, formatID, PostProcessSteps.FlipUVs);
-                if (ExportSuccessScene)
+                var exportSuccessScene = v.ExportFile(scene, fileName, formatId, PostProcessSteps.FlipUVs);
+                if (exportSuccessScene)
                 {
                     if (ext == ".dae")
-                        WriteExtraSkinningInfo(FileName, scene, Meshes);
+                        WriteExtraSkinningInfo(fileName, scene, meshes);
 
-                    MessageBox.Show($"Exported {FileName} Successfuly!");
+                    MessageBox.Show($"Exported {fileName} Successfuly!");
                 }
                 else
-                    MessageBox.Show($"Failed to export {FileName}!");
+                    MessageBox.Show($"Failed to export {fileName}!");
             }
 
         }
 
-        private void SaveMeshes(Scene scene, List<STGenericObject> Meshes, STSkeleton skeleton, string FileName, List<int> NodeArray)
+        private void SaveMeshes(Scene scene, List<STGenericObject> meshes, STSkeleton skeleton, string fileName, List<int> nodeArray)
         {
-            int MeshIndex = 0;
-            foreach (var obj in Meshes)
+            var meshIndex = 0;
+            foreach (var mesh in meshes.Select(obj => SaveMesh(obj, scene, meshIndex++, skeleton, nodeArray)))
             {
-                var mesh = SaveMesh((STGenericObject)obj, scene, MeshIndex++, skeleton, NodeArray);
                 scene.Meshes.Add(mesh);
             }
-            Node geomNode = new Node(Path.GetFileNameWithoutExtension(FileName), scene.RootNode);
+            var geomNode = new Node(Path.GetFileNameWithoutExtension(fileName), scene.RootNode);
 
-            for (int ob = 0; ob < scene.MeshCount; ob++)
+            for (var ob = 0; ob < scene.MeshCount; ob++)
             {
                 geomNode.MeshIndices.Add(ob);
-
-                //     if (!scene.Meshes[ob].HasBones)
             }
 
             scene.RootNode.Children.Add(geomNode);
         }
 
-        private Mesh SaveMesh(STGenericObject genericObj, Scene scene, int index, STSkeleton skeleton, List<int> NodeArray)
+        private Mesh SaveMesh(STGenericObject genericObj, Scene scene, int index, STSkeleton skeleton, List<int> nodeArray)
         {
             //Assimp is weird so use mesh_# for the name. We'll change it back after save
-            Mesh mesh = new Mesh($"mesh_{ index }", PrimitiveType.Triangle);
+            var mesh = new Mesh($"mesh_{ index }", PrimitiveType.Triangle);
 
             if (genericObj.MaterialIndex < scene.MaterialCount && genericObj.MaterialIndex > 0)
                 mesh.MaterialIndex = genericObj.MaterialIndex;
             else
                 mesh.MaterialIndex = 0;
 
-            List<Vector3D> textureCoords0 = new List<Vector3D>();
-            List<Vector3D> textureCoords1 = new List<Vector3D>();
-            List<Vector3D> textureCoords2 = new List<Vector3D>();
-            List<Color4D> vertexColors = new List<Color4D>();
+            var textureCoords0 = new List<Vector3D>();
+            var textureCoords1 = new List<Vector3D>();
+            var textureCoords2 = new List<Vector3D>();
+            var vertexColors = new List<Color4D>();
 
-            int vertexID = 0;
-            foreach (Vertex v in genericObj.vertices)
+            var vertexId = 0;
+            foreach (var v in genericObj.vertices)
             {
                 mesh.Vertices.Add(new Vector3D(v.pos.X, v.pos.Y, v.pos.Z));
                 mesh.Normals.Add(new Vector3D(v.nrm.X, v.nrm.Y, v.nrm.Z));
@@ -134,71 +131,66 @@ namespace Toolbox.Library
 
                 if (skeleton != null)
                 {
-                    for (int j = 0; j < v.boneIds.Count; j++)
+                    for (var j = 0; j < v.boneIds.Count; j++)
                     {
                         if (j < genericObj.VertexSkinCount)
                         {
-                            STBone STbone = null;
-                            if (NodeArray != null)
-                            {
-                                //Get the bone via the node array and bone index from the vertex
-                                STbone = skeleton.bones[NodeArray[v.boneIds[j]]];
-                            }
-                            else
-                                STbone = skeleton.bones[v.boneIds[j]];
+                            STBone sTbone = nodeArray != null ? skeleton.bones[nodeArray[v.boneIds[j]]] : skeleton.bones[v.boneIds[j]];
 
                             //Find the index of a bone. If it doesn't exist then we add it
-                            int boneInd = mesh.Bones.FindIndex(x => x.Name == STbone.Text);
+                            var boneInd = mesh.Bones.FindIndex(x => x.Name == sTbone.Text);
 
                             if (boneInd == -1)
                             {
-                                var matrices = Toolbox.Library.IO.MatrixExenstion.CalculateInverseMatrix(STbone);
+                                var matrices = Toolbox.Library.IO.MatrixExenstion.CalculateInverseMatrix(sTbone);
 
                                 //Set the inverse matrix
-                                Matrix4x4 transform = matrices.inverse.FromNumerics();
+                                var transform = matrices.inverse.FromNumerics();
 
                                 //Create a new assimp bone
-                                Bone bone = new Bone();
-                                bone.Name = STbone.Text;
-                                bone.OffsetMatrix = STbone.invert.ToMatrix4x4();
+                                var bone = new Bone
+                                {
+                                    Name = sTbone.Text,
+                                    OffsetMatrix = sTbone.invert.ToMatrix4x4()
+                                };
                                 mesh.Bones.Add(bone);
                                 BoneNames.Add(bone.Name);
 
                                 boneInd = mesh.Bones.IndexOf(bone); //Set the index of the bone for the vertex weight
                             }
 
-                            int MinWeightAmount = 0;
+                            var minWeightAmount = 0;
 
                             //Check if the max amount of weights is higher than the current bone id
-                            if (v.boneWeights.Count > j && v.boneWeights[j] > MinWeightAmount)
+                            if (v.boneWeights.Count > j && v.boneWeights[j] > minWeightAmount)
                             {
                                 if (v.boneWeights[j] <= 1)
-                                    mesh.Bones[boneInd].VertexWeights.Add(new VertexWeight(vertexID, v.boneWeights[j]));
+                                    mesh.Bones[boneInd].VertexWeights.Add(new VertexWeight(vertexId, v.boneWeights[j]));
                                 else
-                                    mesh.Bones[boneInd].VertexWeights.Add(new VertexWeight(vertexID, 1));
+                                    mesh.Bones[boneInd].VertexWeights.Add(new VertexWeight(vertexId, 1));
                             }
-                            else if (v.boneWeights.Count == 0 || v.boneWeights[j] > MinWeightAmount)
-                                mesh.Bones[boneInd].VertexWeights.Add(new VertexWeight(vertexID, 1));
+                            else if (v.boneWeights.Count == 0 || v.boneWeights[j] > minWeightAmount)
+                                mesh.Bones[boneInd].VertexWeights.Add(new VertexWeight(vertexId, 1));
                         }
                     }
                 }
 
 
-                vertexID++;
+                vertexId++;
             }
 
             if (genericObj.lodMeshes.Count != 0)
             {
-                List<int> faces = genericObj.lodMeshes[genericObj.DisplayLODIndex].faces;
-                for (int f = 0; f < faces.Count; f++)
+                var faces = genericObj.lodMeshes[genericObj.DisplayLODIndex].faces;
+                for (var f = 0; f < faces.Count; f++)
                     mesh.Faces.Add(new Face(new int[] { faces[f++], faces[f++], faces[f] }));
             }
             if (genericObj.PolygonGroups.Count != 0)
             {
-                for (int p = 0; p < genericObj.PolygonGroups.Count; p++)
+                for (var p = 0; p < genericObj.PolygonGroups.Count; p++)
                 {
                     var polygonGroup = genericObj.PolygonGroups[p];
-                    for (int f = 0; f < polygonGroup.faces.Count; f++)
+                    for (var f = 0; f < polygonGroup.faces.Count; f++)
                         if (f < polygonGroup.faces.Count - 2)
                             mesh.Faces.Add(new Face(new int[] { polygonGroup.faces[f++], polygonGroup.faces[f++], polygonGroup.faces[f] }));
                 }
@@ -215,15 +207,15 @@ namespace Toolbox.Library
         //Extra skin data based on https://github.com/Sage-of-Mirrors/SuperBMD/blob/ce1061e9b5f57de112f1d12f6459b938594664a0/SuperBMDLib/source/Model.cs#L193
         //Todo this doesn't quite work yet
         //Need to adjust all mesh name IDs so they are correct
-        private void WriteExtraSkinningInfo(string FileName, Scene outScene, List<STGenericObject> Meshes)
+        private void WriteExtraSkinningInfo(string fileName, Scene outScene, List<STGenericObject> meshes)
         {
-            StreamWriter test = new StreamWriter(FileName + ".tmp");
-            StreamReader dae = File.OpenText(FileName);
+            var test = new StreamWriter(fileName + ".tmp");
+            var dae = File.OpenText(fileName);
 
-            int geomIndex = 0;
+            var geomIndex = 0;
             while (!dae.EndOfStream)
             {
-                string line = dae.ReadLine();
+                var line = dae.ReadLine();
 
                 /* if (line == "  <library_visual_scenes>")
                  {
@@ -267,8 +259,8 @@ namespace Toolbox.Library
                  }*/
                 if (line.Contains("<geometry"))
                 {
-                    string RealMeshName = Meshes[geomIndex].Text;
-                    test.WriteLine($"    <geometry id=\"meshId{ geomIndex }\" name=\"{ RealMeshName }\" > ");
+                    var realMeshName = meshes[geomIndex].Text;
+                    test.WriteLine($"    <geometry id=\"meshId{ geomIndex }\" name=\"{ realMeshName }\" > ");
                     test.Flush();
 
                     geomIndex++;
@@ -291,17 +283,17 @@ namespace Toolbox.Library
             test.Close();
             dae.Close();
 
-            File.Copy(FileName + ".tmp", FileName, true);
-            File.Delete(FileName + ".tmp");
+            File.Copy(fileName + ".tmp", fileName, true);
+            File.Delete(fileName + ".tmp");
         }
 
         private void AddControllerLibrary(Scene scene, StreamWriter writer)
         {
             writer.WriteLine("  <library_controllers>");
 
-            for (int i = 0; i < scene.MeshCount; i++)
+            for (var i = 0; i < scene.MeshCount; i++)
             {
-                Mesh curMesh = scene.Meshes[i];
+                var curMesh = scene.Meshes[i];
                 curMesh.Name = curMesh.Name.Replace('_', '-');
 
                 writer.WriteLine($"   <controller id=\"{ curMesh.Name }-skin\" name=\"{ curMesh.Name }Skin\">");
@@ -339,7 +331,7 @@ namespace Toolbox.Library
             writer.WriteLine($"      <Name_array id=\"{ mesh.Name }-skin-joints-array\" count=\"{ mesh.Bones.Count }\">");
 
             writer.Write("       ");
-            foreach (Bone bone in mesh.Bones)
+            foreach (var bone in mesh.Bones)
             {
                 writer.Write($"{ bone.Name }");
                 if (bone != mesh.Bones.Last())
@@ -367,9 +359,9 @@ namespace Toolbox.Library
             writer.WriteLine($"      <source id =\"{ mesh.Name }-skin-bind_poses-array\">");
             writer.WriteLine($"      <float_array id=\"{ mesh.Name }-skin-bind_poses-array\" count=\"{ mesh.Bones.Count * 16 }\">");
 
-            foreach (Bone bone in mesh.Bones)
+            foreach (var bone in mesh.Bones)
             {
-                Matrix4x4 ibm = bone.OffsetMatrix;
+                var ibm = bone.OffsetMatrix;
                 ibm.Transpose();
 
                 writer.WriteLine($"       {ibm.A1.ToString("F")} {ibm.A2.ToString("F")} {ibm.A3.ToString("F")} {ibm.A4.ToString("F")}");
@@ -395,9 +387,9 @@ namespace Toolbox.Library
 
         private void WriteSkinWeightsToStream(Mesh mesh, StreamWriter writer)
         {
-            int totalWeightCount = 0;
+            var totalWeightCount = 0;
 
-            foreach (Bone bone in mesh.Bones)
+            foreach (var bone in mesh.Bones)
             {
                 totalWeightCount += bone.VertexWeightCount;
             }
@@ -406,9 +398,9 @@ namespace Toolbox.Library
             writer.WriteLine($"      <float_array id=\"{ mesh.Name }-skin-weights-array\" count=\"{ totalWeightCount }\">");
             writer.Write("       ");
 
-            foreach (Bone bone in mesh.Bones)
+            foreach (var bone in mesh.Bones)
             {
-                foreach (VertexWeight weight in bone.VertexWeights)
+                foreach (var weight in bone.VertexWeights)
                 {
                     writer.Write($"{ weight.Weight } ");
                 }
@@ -452,23 +444,23 @@ namespace Toolbox.Library
 
         private void WriteVertexWeightsToStream(Mesh mesh, StreamWriter writer)
         {
-            List<float> weights = new List<float>();
-            Dictionary<int, RiggedWeight> vertIDWeights = new Dictionary<int, RiggedWeight>();
+            var weights = new List<float>();
+            var vertIdWeights = new Dictionary<int, RiggedWeight>();
 
-            foreach (Bone bone in mesh.Bones)
+            foreach (var bone in mesh.Bones)
             {
-                foreach (VertexWeight weight in bone.VertexWeights)
+                foreach (var weight in bone.VertexWeights)
                 {
                     weights.Add(weight.Weight);
 
-                    if (!vertIDWeights.ContainsKey(weight.VertexID))
-                        vertIDWeights.Add(weight.VertexID, new RiggedWeight());
+                    if (!vertIdWeights.ContainsKey(weight.VertexID))
+                        vertIdWeights.Add(weight.VertexID, new RiggedWeight());
 
-                    vertIDWeights[weight.VertexID].AddWeight(weight.Weight, mesh.Bones.IndexOf(bone));
+                    vertIdWeights[weight.VertexID].AddWeight(weight.Weight, mesh.Bones.IndexOf(bone));
                 }
             }
 
-            writer.WriteLine($"      <vertex_weights count=\"{ vertIDWeights.Count }\">");
+            writer.WriteLine($"      <vertex_weights count=\"{ vertIdWeights.Count }\">");
 
             writer.WriteLine($"       <input semantic=\"JOINT\" source=\"#{ mesh.Name }-skin-joints-array\" offset=\"0\"></input>");
             writer.WriteLine($"       <input semantic=\"WEIGHT\" source=\"#{ mesh.Name }-skin-weights-array\" offset=\"1\"></input>");
@@ -476,19 +468,19 @@ namespace Toolbox.Library
             writer.WriteLine("       <vcount>");
 
             writer.Write("        ");
-            for (int i = 0; i < vertIDWeights.Count; i++)
-                writer.Write($"{ vertIDWeights[i].WeightCount } ");
+            for (var i = 0; i < vertIdWeights.Count; i++)
+                writer.Write($"{ vertIdWeights[i].WeightCount } ");
 
             writer.WriteLine("\n       </vcount>");
 
             writer.WriteLine("       <v>");
             writer.Write("        ");
 
-            for (int i = 0; i < vertIDWeights.Count; i++)
+            for (var i = 0; i < vertIdWeights.Count; i++)
             {
-                RiggedWeight curWeight = vertIDWeights[i];
+                var curWeight = vertIdWeights[i];
 
-                for (int j = 0; j < curWeight.WeightCount; j++)
+                for (var j = 0; j < curWeight.WeightCount; j++)
                 {
                     writer.Write($"{ curWeight.BoneIndices[j] } { weights.IndexOf(curWeight.Weights[j]) } ");
                 }
@@ -512,24 +504,24 @@ namespace Toolbox.Library
             writer.Flush();
         }
 
-        private void SaveMaterials(Scene scene, List<STGenericMaterial> Materials, string FileName, List<STGenericTexture> Textures)
+        private void SaveMaterials(Scene scene, List<STGenericMaterial> materials, string fileName, List<STGenericTexture> textures)
         {
-            string TextureExtension = ".png";
-            string TexturePath = System.IO.Path.GetDirectoryName(FileName);
+            var textureExtension = ".png";
+            var texturePath = System.IO.Path.GetDirectoryName(fileName);
 
-            for (int i = 0; i < Textures.Count; i++)
+            for (var i = 0; i < textures.Count; i++)
             {
-                string path = System.IO.Path.Combine(TexturePath, Textures[i].Text + TextureExtension);
+                var path = System.IO.Path.Combine(texturePath, textures[i].Text + textureExtension);
 
-                if (!ExtractedTextures.Contains(path))
+                if (!_extractedTextures.Contains(path))
                 {
-                    ExtractedTextures.Add(path);
+                    _extractedTextures.Add(path);
 
-                    progressBar.Task = $"Exporting Texture {Textures[i].Text}";
-                    progressBar.Value = ((i * 100) / Textures.Count);
-                    progressBar.Refresh();
+                    _progressBar.Task = $"Exporting Texture {textures[i].Text}";
+                    _progressBar.Value = ((i * 100) / textures.Count);
+                    _progressBar.Refresh();
 
-                    var bitmap = Textures[i].GetBitmap();
+                    var bitmap = textures[i].GetBitmap();
                     bitmap.Save(path);
                     bitmap.Dispose();
 
@@ -537,31 +529,31 @@ namespace Toolbox.Library
                 }
             }
 
-            if (Materials.Count == 0)
+            if (materials.Count == 0)
             {
-                Material material = new Material();
+                var material = new Material();
                 material.Name = "New Material";
                 scene.Materials.Add(material);
                 return;
             }
 
-            foreach (var mat in Materials)
+            foreach (var mat in materials)
             {
                 var genericMat = (STGenericMaterial)mat;
 
-                Material material = new Material();
+                var material = new Material();
                 material.Name = genericMat.Text;
 
                 foreach (var tex in genericMat.TextureMaps)
                 {
-                    int index = Textures.FindIndex(r => r.Text.Equals(tex.Name));
+                    var index = textures.FindIndex(r => r.Text.Equals(tex.Name));
 
-                    string path = System.IO.Path.Combine(TexturePath, tex.Name + TextureExtension);
+                    var path = System.IO.Path.Combine(texturePath, tex.Name + textureExtension);
 
                     if (!File.Exists(path))
                         continue;
 
-                    TextureSlot slot2 = new TextureSlot(path, ConvertToAssimpTextureType(tex.Type), 0, TextureMapping.FromUV,
+                    var slot2 = new TextureSlot(path, ConvertToAssimpTextureType(tex.Type), 0, TextureMapping.FromUV,
                             0, 1.0f, Assimp.TextureOperation.Add, ConvertToAssimpWrapType(tex.WrapModeS), ConvertToAssimpWrapType(tex.WrapModeT), 0);
 
                     material.AddMaterialTexture(ref slot2);
@@ -598,25 +590,25 @@ namespace Toolbox.Library
             }
         }
 
-        public void SaveFromObject(STGenericObject genericObject, string FileName)
+        public void SaveFromObject(STGenericObject genericObject, string fileName)
         {
-            Scene scene = new Scene();
+            var scene = new Scene();
             scene.RootNode = new Node("Root");
 
             var mesh = SaveMesh(genericObject, scene, 0, null, null);
             mesh.MaterialIndex = 0;
             scene.Meshes.Add(mesh);
 
-            Material material = new Material();
+            var material = new Material();
             material.Name = "NewMaterial";
             scene.Materials.Add(material);
 
-            SaveScene(FileName, scene, new List<STGenericObject>() { genericObject });
+            SaveScene(fileName, scene, new List<STGenericObject>() { genericObject });
         }
 
         private void SaveSkeleton(STSkeleton skeleton, Node parentNode)
         {
-            Node root = new Node("skeleton_root");
+            var root = new Node("skeleton_root");
             parentNode.Children.Add(root);
 
             Console.WriteLine($"bones {skeleton.bones.Count}");
@@ -628,11 +620,11 @@ namespace Toolbox.Library
                     //Get each root bone and find children
                     if (bone.parentIndex == -1)
                     {
-                        Node boneNode = new Node(bone.Text);
+                        var boneNode = new Node(bone.Text);
                         boneNode.Transform = AssimpHelper.GetBoneMatrix(bone);
                         root.Children.Add(boneNode);
 
-                        foreach (STBone child in bone.GetChildren())
+                        foreach (var child in bone.GetChildren())
                             SaveBones(boneNode, child, skeleton);
                     }
                 }
@@ -640,12 +632,12 @@ namespace Toolbox.Library
         }
         private void SaveBones(Node parentBone, STBone bone, STSkeleton skeleton)
         {
-            Node boneNode = new Node(bone.Text);
+            var boneNode = new Node(bone.Text);
             parentBone.Children.Add(boneNode);
 
             boneNode.Transform = AssimpHelper.GetBoneMatrix(bone);
 
-            foreach (STBone child in bone.GetChildren())
+            foreach (var child in bone.GetChildren())
                 SaveBones(boneNode, child, skeleton);
         }
     }
