@@ -374,7 +374,7 @@ namespace Toolbox.Library
 
                         if (settings.FixTexCoords)
                         {
-                            UV0.Add(modifyVertex(vertex.uv0.X)); UV0.Add(1 - vertex.uv0.Y);
+                            UV0.Add(ModifyVertex(vertex.uv0.X)); UV0.Add(1 - vertex.uv0.Y);
                             UV1.Add(vertex.uv1.X < 1 ? vertex.uv1.X : 1f - vertex.uv1.X);
                             UV2.Add(vertex.uv2.X < 1 ? vertex.uv2.X : 1f - vertex.uv2.X);
                         }
@@ -519,9 +519,10 @@ namespace Toolbox.Library
                 System.Windows.Forms.MessageBox.Show($"Exported {FileName} Successfuly!");
         }
 
-        private static float modifyVertex(float uv0X)
+        private static float ModifyVertex(float uv0X)
         {
-            return uv0X < 1 ? uv0X : uv0X < 1 ? 1f + uv0X : uv0X;
+            var maxXFixed = uv0X < 1f ? uv0X : 1f - uv0X;
+            return maxXFixed > 0 ? maxXFixed : maxXFixed + 1f;
         }
 
 

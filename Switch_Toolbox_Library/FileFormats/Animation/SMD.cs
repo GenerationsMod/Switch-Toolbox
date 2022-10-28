@@ -286,18 +286,16 @@ namespace Toolbox.Library.Animations
             return a;
         }
         
-        public static void Save(STSkeletonAnimation anim, STSkeleton Skeleton, String Fname)
+        public static void Save(STSkeletonAnimation anim, STSkeleton skeleton, String fname)
         {
-            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-            
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@Fname))
+            using (var file = new StreamWriter(fname))
             {
                 file.WriteLine("version 1");
 
                 file.WriteLine("nodes");
-                foreach (STBone b in Skeleton.bones)
+                foreach (STBone b in skeleton.bones)
                 {
-                    file.WriteLine(Skeleton.bones.IndexOf(b) + " \"" + b.Text + "\" " + b.parentIndex);
+                    file.WriteLine(skeleton.bones.IndexOf(b) + " \"" + b.Text + "\" " + b.parentIndex);
                 }
                 file.WriteLine("end");
 
@@ -312,13 +310,13 @@ namespace Toolbox.Library.Animations
 
                     foreach (var sb in anim.AnimGroups)
                     {
-                        STBone b = Skeleton.GetBone(sb.Name);
+                        var b = skeleton.GetBone(sb.Name);
                         if (b == null) continue;
-                        Vector3 eul = STMath.ToEulerAngles(b.rot);
-                        Vector3 scale = b.GetScale();
-                        Vector3 translate = b.GetPosition();
+                        var eul = STMath.ToEulerAngles(b.rot);
+                        var scale = b.GetScale();
+                        var translate = b.GetPosition();
 
-                        file.WriteLine($"{ Skeleton.bones.IndexOf(b)} {translate.X} {translate.Y} {translate.Z} {eul.X} {eul.Y} {eul.Z}");
+                        file.WriteLine($"{ skeleton.bones.IndexOf(b)} {translate.X} {translate.Y} {translate.Z} {eul.X} {eul.Y} {eul.Z}");
                     }
 
                 }
@@ -328,55 +326,16 @@ namespace Toolbox.Library.Animations
             }
         }
 
-        public static void Save(STSkeletonAnimation anim, String Fname)
+        public static void Save(STSkeletonAnimation anim, string fname)
         {
-            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
-
-            STSkeleton Skeleton = anim.GetActiveSkeleton();
-
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@Fname))
-            {
-                file.WriteLine("version 1");
-
-                file.WriteLine("nodes");
-                foreach (STBone b in Skeleton.bones)
-                {
-                    file.WriteLine(Skeleton.bones.IndexOf(b) + " \"" + b.Text + "\" " + b.parentIndex);
-                }
-                file.WriteLine("end");
-
-                file.WriteLine("skeleton");
-                anim.SetFrame(0);
-                for (int i = 0; i <= anim.FrameCount; i++)
-                {
-                    anim.SetFrame(i);
-                    anim.NextFrame();
-
-                    file.WriteLine($"time {i}");
-
-                    foreach (var sb in anim.AnimGroups)
-                    {
-                        STBone b = Skeleton.GetBone(sb.Name);
-                        if (b == null) continue;
-                        Vector3 eul = STMath.ToEulerAngles(b.rot);
-                        Vector3 scale = b.GetScale();
-                        Vector3 translate = b.GetPosition();
-
-                        file.WriteLine($"{ Skeleton.bones.IndexOf(b)} {translate.X} {translate.Y} {translate.Z} {eul.X} {eul.Y} {eul.Z}");
-                    }
-
-                }
-                file.WriteLine("end");
-
-                file.Close();
-            }
+            Save(anim, anim.GetActiveSkeleton(), fname);
         }
 
         public static void Save(Animation anim, STSkeleton Skeleton, String Fname)
         {
-            System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter(@Fname))
+            using (StreamWriter file = new StreamWriter(@Fname))
             {
                 file.WriteLine("version 1");
 

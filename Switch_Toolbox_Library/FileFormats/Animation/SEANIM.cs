@@ -169,11 +169,13 @@ namespace Toolbox.Library.Animations
 
         public static void Save(STSkeletonAnimation anim, string FileName)
         {
-            STSkeleton skeleton = anim.GetActiveSkeleton();
+            var skeleton = anim.GetActiveSkeleton();
 
-            SEAnim seAnim = new SEAnim();
-            seAnim.Looping = anim.Loop;
-            seAnim.AnimType = AnimationType.Absolute;
+            var seAnim = new SEAnim
+            {
+                Looping = anim.Loop,
+                AnimType = AnimationType.Absolute
+            };
 
             anim.SetFrame(0);
             for (int frame = 0; frame < anim.FrameCount; frame++)
