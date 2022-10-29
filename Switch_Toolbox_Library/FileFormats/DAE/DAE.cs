@@ -374,9 +374,9 @@ namespace Toolbox.Library
 
                         if (settings.FixTexCoords)
                         {
-                            UV0.Add(vertex.uv0.X < 1 ? vertex.uv0.X : 1f - vertex.uv0.X); UV0.Add(vertex.uv0.Y);
-                            UV1.Add(vertex.uv1.X < 1 ? vertex.uv1.X : 1f - vertex.uv1.X); UV0.Add(vertex.uv0.Y);
-                            UV2.Add(vertex.uv2.X < 1 ? vertex.uv2.X : 1f - vertex.uv2.X); UV0.Add(vertex.uv0.Y);
+                            UV0.Add(vertex.uv0.X < 1 ? vertex.uv0.X : 1f - vertex.uv0.X); UV0.Add(1 - vertex.uv0.Y);
+                            UV1.Add(vertex.uv1.X < 1 ? vertex.uv1.X : 1f - vertex.uv1.X); UV1.Add(1 - vertex.uv1.Y);
+                            UV2.Add(vertex.uv2.X < 1 ? vertex.uv2.X : 1f - vertex.uv2.X); UV2.Add(1 - vertex.uv2.Y);
                         }
                         else
                         {
