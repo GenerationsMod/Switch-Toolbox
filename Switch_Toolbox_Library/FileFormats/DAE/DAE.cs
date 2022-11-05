@@ -385,12 +385,12 @@ namespace Toolbox.Library
                             UV2.Add(vertex.uv2.X); UV2.Add(vertex.uv2.Y);
                         }
 
-                        Color.AddRange(new float[] { vertex.col.X, vertex.col.Y, vertex.col.Z, vertex.col.W });
-                        Color2.AddRange(new float[] { vertex.col2.X, vertex.col2.Y, vertex.col2.Z, vertex.col2.W });
+                        Color.AddRange(new[] { vertex.col.X, vertex.col.Y, vertex.col.Z, vertex.col.W });
+                        Color2.AddRange(new[] { vertex.col2.X, vertex.col2.Y, vertex.col2.Z, vertex.col2.W });
 
-                        List<int> bIndices = new List<int>();
-                        List<float> bWeights = new List<float>();
-                        for (int b = 0; b < vertex.boneIds.Count; b++)
+                        var bIndices = new List<int>();
+                        var bWeights = new List<float>();
+                        for (var b = 0; b < vertex.boneIds.Count; b++)
                         {
                             if (b > mesh.VertexSkinCount - 1)
                                 continue;
