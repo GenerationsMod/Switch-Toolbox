@@ -104,6 +104,16 @@ namespace Toolbox.Library
                     List<string> textureNames = new List<string>();
                     for (int i = 0; i < Textures?.Count; i++)
                     {
+                        // Ignore useless textures which take up export time. These get leaked somehow with batch exporting.
+                        if(Textures[i].Text.Contains("dummy_col")) continue;
+                        if(Textures[i].Text.Contains("Default_lta")) continue;
+                        if(Textures[i].Text.Contains("projection_effect_col")) continue;
+                        if(Textures[i].Text.Contains("emi")) continue; // Emission Map
+                        if(Textures[i].Text.Contains("nor")) continue; // Normal Map
+                        if(Textures[i].Text.Contains("amb")) continue; // AO Map
+                        if(Textures[i].Text.Contains("ita")) continue; // ???
+                        if(Textures[i].Text.Contains("env")) continue; // Environment Map?
+                        
                         if (!textureNames.Contains(Textures[i].Text))
                             textureNames.Add(Textures[i].Text);
 

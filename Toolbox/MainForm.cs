@@ -1659,7 +1659,6 @@ namespace Toolbox
             string extension, string outputFolder, ExportMode exportMode)
         {
             var modelFile = new List<GFBMDL>();
-            var animations = new List<GFBANM>();
             var archiveFilePath = outputFolder;
             if (settings.SeperateArchiveFiles)
                 archiveFilePath = Path.Combine(outputFolder,
@@ -1669,25 +1668,12 @@ namespace Toolbox
             {
                 try
                 {
-                    var format = file.OpenFile();
-                    if (format is GFBANM anm) animations.Add(anm);
-
-                    SearchFileFormat(settings, format, extension, archiveFilePath, exportMode, modelFile);
+                    SearchFileFormat(settings, file.OpenFile(), extension, archiveFilePath, exportMode, modelFile);
                 }
                 catch (Exception ex)
                 {
                     failedFiles.Add($"{file} \n Error:\n {ex} \n");
                 }
-            }
-
-            if (modelFile.Count <= 0) return;
-            foreach (var animation in animations)
-            {
-                SMD.Save(
-                    (STSkeletonAnimation)animation.AnimationController,
-                    modelFile[0].Model.Skeleton,
-                    Path.Combine(archiveFilePath, animation.Text.Substring(0, animation.Text.IndexOf('[')) + ".smd")
-                );
             }
         }
     }
