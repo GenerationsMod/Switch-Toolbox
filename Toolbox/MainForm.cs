@@ -1450,7 +1450,6 @@ namespace Toolbox
 
         private void BatchExportModels(string[] files, string outputFolder)
         {
-            BatchExportHelper.IsActive = true;
             var Formats = new List<string> { "DAE (.dae)" };
 
             failedFiles = new List<string>();
@@ -1474,9 +1473,7 @@ namespace Toolbox
                     SearchFileFormat(form.BatchSettings, fileFormat, extension, outputFolder, ExportMode.Models,
                         new List<GFBMDL>());
                 }
-                
-                BatchExportHelper.ExportAll();
-                BatchExportHelper.IsActive = false;
+
                 batchExportFileList.Clear();
             }
             else
