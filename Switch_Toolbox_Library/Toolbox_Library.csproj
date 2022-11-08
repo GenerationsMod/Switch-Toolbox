@@ -211,6 +211,7 @@
     <Compile Include="Animations\SceneAnimation.cs" />
     <Compile Include="Audio\AudioFileRipper.cs" />
     <Compile Include="Audio\VGAudioFile.cs" />
+    <Compile Include="BatchExportHelper.cs" />
     <Compile Include="Collections\SortExtensions.cs" />
     <Compile Include="Compression\7ZIP\Common\CommandLineParser.cs" />
     <Compile Include="Compression\7ZIP\Common\CRC.cs" />

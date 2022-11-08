@@ -109,7 +109,6 @@ namespace Toolbox.Library
                         if(Textures[i].Text.Contains("Default_lta")) continue;
                         if(Textures[i].Text.Contains("projection_effect_col")) continue;
                         if(Textures[i].Text.Contains("emi")) continue; // Emission Map
-                        if(Textures[i].Text.Contains("nor")) continue; // Normal Map
                         if(Textures[i].Text.Contains("amb")) continue; // AO Map
                         if(Textures[i].Text.Contains("ita")) continue; // ???
                         if(Textures[i].Text.Contains("env")) continue; // Environment Map?
@@ -130,29 +129,32 @@ namespace Toolbox.Library
                                 {
                                     if (settings.UseTextureChannelComponents)
                                         bitmap = Textures[i].GetComponentBitmap(bitmap);
-                                    string textureName = Textures[i].Text;
+                                    var textureName = Textures[i].Text;
                                     if (textureName.RemoveIllegaleFileNameCharacters() != textureName)
                                     {
-                                        string properName = textureName.RemoveIllegaleFileNameCharacters();
-                                        for (int m = 0; m < Materials?.Count; m++)
+                                        var properName = textureName.RemoveIllegaleFileNameCharacters();
+                                        for (var m = 0; m < Materials?.Count; m++)
                                         {
-                                            foreach (var tex in Materials[m].TextureMaps)
+                                            foreach (var tex in Materials[m].TextureMaps.Where(tex => tex.Name == textureName))
                                             {
-                                                if (tex.Name == textureName)
-                                                    tex.Name = properName;
+                                                tex.Name = properName;
                                             }
                                         }
 
                                         textureName = properName;
                                     }
-
-                                    bitmap.Save($"{TexturePath}/{textureName}.png");
-                                    bitmap.Dispose();
-
+                                    
+                                    if(BatchExportHelper.IsActive) BatchExportHelper.Add(bitmap, $"{TexturePath}/{textureName}.png");
+                                    else
+                                    {
+                                        bitmap.Save($"{TexturePath}/{textureName}.png");
+                                        bitmap.Dispose();
+                                    }
+                                    
                                     GC.Collect();
                                 }
                             }
-                            catch (Exception ex) {
+                            catch (Exception) {
                                 failedTextureExport.Add(Textures[i].Text);
                             }
                         }
@@ -179,33 +181,48 @@ namespace Toolbox.Library
 
                         foreach (var tex in mat.TextureMaps)
                         {
-                            TextureMap texMap = new TextureMap();
-                            texMap.Name = tex.Name;
-                            if (tex.Type == STGenericMatTexture.TextureType.Diffuse)
-                                texMap.Type = PhongTextureType.diffuse;
-                            else if (tex.Type == STGenericMatTexture.TextureType.Normal)
-                                texMap.Type = PhongTextureType.bump;
-                            else if (tex.Type == STGenericMatTexture.TextureType.Specular)
-                                texMap.Type = PhongTextureType.specular;
-                            else if (tex.Type == STGenericMatTexture.TextureType.Emission)
-                                texMap.Type = PhongTextureType.emission;
-                            else
-                                continue; //Skip adding unknown types
+                            var texMap = new TextureMap
+                            {
+                                Name = tex.Name
+                            };
+                            switch (tex.Type)
+                            {
+                                case STGenericMatTexture.TextureType.Diffuse:
+                                    texMap.Type = PhongTextureType.diffuse;
+                                    break;
+                                case STGenericMatTexture.TextureType.Normal:
+                                    texMap.Type = PhongTextureType.bump;
+                                    break;
+                                default:
+                                    continue; //Skip adding unknown types
+                            }
 
-                            if (tex.WrapModeS == STTextureWrapMode.Repeat)
-                                texMap.WrapModeS = SamplerWrapMode.WRAP;
-                            else if (tex.WrapModeS == STTextureWrapMode.Mirror)
-                                texMap.WrapModeS = SamplerWrapMode.MIRROR;
-                            else if (tex.WrapModeS == STTextureWrapMode.Clamp)
-                                texMap.WrapModeS = SamplerWrapMode.CLAMP;
+                            switch (tex.WrapModeS)
+                            {
+                                case STTextureWrapMode.Repeat:
+                                    texMap.WrapModeS = SamplerWrapMode.WRAP;
+                                    break;
+                                case STTextureWrapMode.Mirror:
+                                    texMap.WrapModeS = SamplerWrapMode.MIRROR;
+                                    break;
+                                case STTextureWrapMode.Clamp:
+                                    texMap.WrapModeS = SamplerWrapMode.CLAMP;
+                                    break;
+                            }
 
 
-                            if (tex.WrapModeT == STTextureWrapMode.Repeat)
-                                texMap.WrapModeT = SamplerWrapMode.WRAP;
-                            else if (tex.WrapModeT == STTextureWrapMode.Mirror)
-                                texMap.WrapModeT = SamplerWrapMode.MIRROR;
-                            else if(tex.WrapModeT == STTextureWrapMode.Clamp)
-                                texMap.WrapModeT = SamplerWrapMode.CLAMP;
+                            switch (tex.WrapModeT)
+                            {
+                                case STTextureWrapMode.Repeat:
+                                    texMap.WrapModeT = SamplerWrapMode.WRAP;
+                                    break;
+                                case STTextureWrapMode.Mirror:
+                                    texMap.WrapModeT = SamplerWrapMode.MIRROR;
+                                    break;
+                                case STTextureWrapMode.Clamp:
+                                    texMap.WrapModeT = SamplerWrapMode.CLAMP;
+                                    break;
+                            }
 
 
                             //If no textures are saved, still keep images references
@@ -230,19 +247,18 @@ namespace Toolbox.Library
                     List<string> riggedBones = new List<string>();
                     if (settings.OnlyExportRiggedBones)
                     {
-                        for (int i = 0; i < Meshes.Count; i++)
+                        foreach (var t1 in Meshes)
                         {
-                            for (int v = 0; v < Meshes[i].vertices.Count; v++)
+                            foreach (var vertex in t1.vertices)
                             {
-                                var vertex = Meshes[i].vertices[v];
-                                for (int j = 0; j < vertex.boneIds.Count; j++)
+                                foreach (var t in vertex.boneIds)
                                 {
-                                    int id = -1;
-                                    if (boneIndices != null && boneIndices.Count > vertex.boneIds[j]) {
-                                        id = boneIndices[vertex.boneIds[j]];
+                                    int id;
+                                    if (boneIndices != null && boneIndices.Count > t) {
+                                        id = boneIndices[t];
                                     }
                                     else
-                                        id = vertex.boneIds[j];
+                                        id = t;
 
                                     if (id < skeleton.bones.Count && id != -1)
                                         riggedBones.Add(skeleton.bones[id].Text);
