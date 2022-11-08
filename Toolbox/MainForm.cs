@@ -650,7 +650,7 @@ namespace Toolbox
             var asssemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
             if (DisplayVersion)
                 Text =
-                    $"{Application.ProductName} | Version: {Runtime.ProgramVersion} | {commit} | Compile Date: {Runtime.CompileDate} Assembly {asssemblyVersion}";
+                    "TargetThisWindow";
             else
                 Text = $"{Application.ProductName}";
         }
