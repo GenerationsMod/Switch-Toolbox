@@ -286,23 +286,16 @@ namespace FirstPlugin
                 {
                     string folderPath = sfd.SelectedPath;
 
-                    BatchFormatExport form = new BatchFormatExport(Formats);
-                    if (form.ShowDialog() == DialogResult.OK)
+                    foreach (TreeNode node in Nodes)
                     {
-                        foreach (TreeNode node in Nodes)
-                        {
-                            Console.WriteLine($"node {node}");
-                            if (!(node is IAnimationContainer))
-                                continue;
+                        Console.WriteLine($"node {node}");
+                        if (!(node is IAnimationContainer))
+                            continue;
 
-                            var anim = ((IAnimationContainer)node).AnimationController;
-                            string name = Path.GetFileNameWithoutExtension(node.Text);
+                        var anim = ((IAnimationContainer)node).AnimationController;
+                        string name = Path.GetFileNameWithoutExtension(node.Text);
 
-                            if (form.Index == 0)
-                                SMD.Save((STSkeletonAnimation)anim, $"{folderPath}/{name}.smd");
-                            if (form.Index == 1)
-                                SEANIM.Save((STSkeletonAnimation)anim, $"{folderPath}/{name}.seanim");
-                        }
+                        SMD.Save((STSkeletonAnimation)anim, $"{folderPath}/{name}.smd");
                     }
                 }
             }
