@@ -962,16 +962,16 @@ namespace Toolbox.Library
         public void SaveBitMap(string FileName, bool ExportSurfaceLevel = false,
             bool ExportMipMapLevel = false, int SurfaceLevel = 0, int MipLevel = 0)
         {
-            STProgressBar progressBar = new STProgressBar();
-            progressBar.Task = "Exporting Image Data...";
-            progressBar.Value = 0;
-            progressBar.StartPosition = FormStartPosition.CenterScreen;
-            progressBar.Show();
-            progressBar.Refresh();
+            // STProgressBar progressBar = new STProgressBar();
+            // progressBar.Task = "Exporting Image Data...";
+            // progressBar.Value = 0;
+            // progressBar.StartPosition = FormStartPosition.CenterScreen;
+            // progressBar.Show();
+            // progressBar.Refresh();
 
             if (ArrayCount > 1 && !ExportSurfaceLevel && false)
             {
-                progressBar.Task = "Select dialog option... ";
+                // progressBar.Task = "Select dialog option... ";
 
                 var result = MessageBox.Show("Multiple image surfaces found! Would you like to export them all?", "Image Exporter",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
@@ -984,24 +984,24 @@ namespace Toolbox.Library
 
                     for (int i = 0; i < ArrayCount; i++)
                     {
-                        progressBar.Task = $"Decoding Surface [{i}] for image {Text}... ";
-                        progressBar.Value = (i * 100) / (int)ArrayCount;
-                        progressBar.Refresh();
+                        // progressBar.Task = $"Decoding Surface [{i}] for image {Text}... ";
+                        // progressBar.Value = (i * 100) / (int)ArrayCount;
+                        // progressBar.Refresh();
 
                         Bitmap arrayBitMap = GetBitmap(i, 0);
                         arrayBitMap.Save($"{name}_Slice_{i}_{ext}");
                         arrayBitMap.Dispose();
                     }
 
-                    progressBar.Value = 100;
-                    progressBar.Close();
+                    // progressBar.Value = 100;
+                    // progressBar.Close();
                     return;
                 }
             }
 
-            progressBar.Task = $"Decoding image {Text}... ";
-            progressBar.Value = 20;
-            progressBar.Refresh();
+            // progressBar.Task = $"Decoding image {Text}... ";
+            // progressBar.Value = 20;
+            // progressBar.Refresh();
 
             Bitmap bitMap = GetBitmap(SurfaceLevel, MipLevel);
             if (Runtime.ImageEditor.UseComponetSelector)
@@ -1015,8 +1015,8 @@ namespace Toolbox.Library
             bitMap.Save(FileName);
             bitMap.Dispose();
 
-            progressBar.Value = 100;
-            progressBar.Close();
+            // progressBar.Value = 100;
+            // progressBar.Close();
         }
         public void SaveDDS(string FileName, bool ExportSurfaceLevel = false,
             bool ExportMipMapLevel = false, int SurfaceLevel = 0, int MipLevel = 0)

@@ -14,6 +14,7 @@ using Toolbox.Library.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.Threading.Tasks;
 using OpenTK.Graphics.OpenGL;
 using Toolbox.Library.NodeWrappers;
 using Toolbox.Library.Rendering;
@@ -23,7 +24,11 @@ namespace Toolbox
     public partial class MainForm : Form, IMdiContainer, IUpdateForm, IMainForm
     {
         private static MainForm _instance;
-        public static MainForm Instance { get { return _instance == null ? _instance = new MainForm() : _instance; } }
+
+        public static MainForm Instance
+        {
+            get { return _instance == null ? _instance = new MainForm() : _instance; }
+        }
 
         IFileFormat[] SupportedFormats;
         IFileMenuExtension[] FileMenuExtensions;
@@ -147,7 +152,7 @@ namespace Toolbox
         private void ReloadFiles()
         {
             SupportedFormats = FileManager.GetFileFormats();
-            FileMenuExtensions = FileManager.GetMenuExtensions(); 
+            FileMenuExtensions = FileManager.GetMenuExtensions();
         }
 
         static void MyHandler(object sender, UnhandledExceptionEventArgs args)
@@ -173,6 +178,7 @@ namespace Toolbox
                 {
                     Runtime.UseLegacyGL = true;
                 }
+
                 if (major <= 1)
                 {
                     Runtime.UseOpenGL = false;
@@ -181,7 +187,9 @@ namespace Toolbox
         }
 
         #region Updater
+
         bool UsePrompt = true;
+
         private void Application_Idle(object sender, EventArgs e)
         {
             if (UpdateProgram.CanUpdate && Runtime.EnableVersionCheck && UsePrompt &&
@@ -218,15 +226,18 @@ namespace Toolbox
             proc.Start();
             Environment.Exit(0);
         }
+
         #endregion
 
         #region OpenFile
 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        {
             OpenFileSelect();
         }
 
-        private void openFolderToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void openFolderToolStripMenuItem_Click(object sender, EventArgs e)
+        {
             FolderSelectDialog dlg = new FolderSelectDialog();
             if (dlg.ShowDialog() == DialogResult.OK)
             {
@@ -360,6 +371,7 @@ namespace Toolbox
                 else
                     AddObjectEditorFile(((TreeNode)file), (ObjectEditor)editor, false);
             }
+
             SetFormatSettings(GetActiveIFileFormat());
 
             if (file is TreeNodeFile)
@@ -398,7 +410,7 @@ namespace Toolbox
 
                     if (ActiveMdiChild is IFIleEditor)
                     {
-                       // if (((IFIleEditor)ActiveMdiChild).GetFileFormats().Count > 0)
+                        // if (((IFIleEditor)ActiveMdiChild).GetFileFormats().Count > 0)
                         //    ((IFIleEditor)ActiveMdiChild).BeforeFileSaved();
                     }
 
@@ -417,6 +429,7 @@ namespace Toolbox
                             {
                                 formats.Add((IFileFormat)fileFormat);
                             }
+
                             sfd.Filter = Utils.GetAllFilters(formats);
                             sfd.DefaultExt = Path.GetExtension(format.FilePath);
 
@@ -449,6 +462,7 @@ namespace Toolbox
                             FileName = sfd.FileName;
                         }
                     }
+
                     Cursor.Current = Cursors.WaitCursor;
                     STFileSaver.SaveFileFormat(format, FileName, UseCompressDialog);
                     Cursor.Current = Cursors.Default;
@@ -472,6 +486,7 @@ namespace Toolbox
                 {
                     format = ((IFileFormat)node);
                 }
+
                 if (format != null)
                 {
                     if (!format.CanSave)
@@ -492,6 +507,7 @@ namespace Toolbox
 
                         FileName = sfd.FileName;
                     }
+
                     Cursor.Current = Cursors.WaitCursor;
 
                     //Use the export method for particular formats like bfres for special save operations
@@ -502,7 +518,8 @@ namespace Toolbox
                     }
 
                     if (node is ArchiveBase)
-                        STFileSaver.SaveFileFormat(((IFileFormat)((ArchiveBase)node).ArchiveFile), FileName, UseCompressDialog);
+                        STFileSaver.SaveFileFormat(((IFileFormat)((ArchiveBase)node).ArchiveFile), FileName,
+                            UseCompressDialog);
                     else
                         STFileSaver.SaveFileFormat(((IFileFormat)node), FileName, UseCompressDialog);
                     Cursor.Current = Cursors.Default;
@@ -517,6 +534,7 @@ namespace Toolbox
         List<string> RecentFiles = new List<string>();
 
         int TabDupeIndex = 0;
+
         private string CheckTabDupes(string Name)
         {
             foreach (TabPage tab in tabForms.TabPages)
@@ -527,10 +545,12 @@ namespace Toolbox
                     return CheckTabDupes(Name);
                 }
             }
+
             return Name;
         }
 
         const int MRUnumber = 6;
+
         private void SaveRecentFile(string path)
         {
             recentToolStripMenuItem.DropDownItems.Clear();
@@ -543,6 +563,7 @@ namespace Toolbox
             {
                 RecentFiles.RemoveAt(MRUnumber);
             }
+
             foreach (string item in RecentFiles)
             {
                 //create new menu for each item in list
@@ -556,19 +577,23 @@ namespace Toolbox
                 //add the menu to "recent" menu
                 recentToolStripMenuItem.DropDownItems.Add(fileRecent);
             }
+
             //writing menu list to file
             //create file called "Recent.txt" located on app folder
             StreamWriter stringToWrite =
-            new StreamWriter(Runtime.ExecutableDir + "\\Recent.txt");
+                new StreamWriter(Runtime.ExecutableDir + "\\Recent.txt");
             foreach (string item in RecentFiles)
             {
                 stringToWrite.WriteLine(item); //write list to stream
             }
+
             stringToWrite.Flush(); //write stream to file
             stringToWrite.Close(); //close the stream and reclaim memory
         }
+
         private void LoadRecentList()
-        {//try to load file. If file isn't found, do nothing
+        {
+            //try to load file. If file isn't found, do nothing
             RecentFiles.Clear();
 
             if (File.Exists(Runtime.ExecutableDir + "\\Recent.txt"))
@@ -580,8 +605,10 @@ namespace Toolbox
                     if (File.Exists(line))
                         RecentFiles.Add(line); //insert to list
                 }
+
                 listToRead.Close(); //close the stream
             }
+
             foreach (string item in RecentFiles)
             {
                 STToolStripItem fileRecent = new STToolStripItem();
@@ -623,7 +650,8 @@ namespace Toolbox
             string commit = $"Commit: {Runtime.CommitInfo}";
             var asssemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
             if (DisplayVersion)
-                Text = $"{Application.ProductName} | Version: {Runtime.ProgramVersion} | {commit} | Compile Date: {Runtime.CompileDate} Assembly {asssemblyVersion}";
+                Text =
+                    $"{Application.ProductName} | Version: {Runtime.ProgramVersion} | {commit} | Compile Date: {Runtime.CompileDate} Assembly {asssemblyVersion}";
             else
                 Text = $"{Application.ProductName}";
         }
@@ -639,6 +667,7 @@ namespace Toolbox
         }
 
         private List<IMenuExtension> menuExtentions = new List<IMenuExtension>();
+
         private void LoadPluginContextMenus(Type[] types)
         {
             foreach (Type T in types)
@@ -652,16 +681,18 @@ namespace Toolbox
                     }
                 }
             }
+
             foreach (IMenuExtension ext in menuExtentions)
             {
                 if (ext.FileMenuExtensions != null)
-                    RegisterMenuExtIndex(fileToolStripMenuItem, ext.FileMenuExtensions, fileToolStripMenuItem.DropDownItems.Count); //last items are separator and settings
+                    RegisterMenuExtIndex(fileToolStripMenuItem, ext.FileMenuExtensions,
+                        fileToolStripMenuItem.DropDownItems.Count); //last items are separator and settings
                 if (ext.ToolsMenuExtensions != null)
                     RegisterMenuExtIndex(toolsToolStripMenuItem, ext.ToolsMenuExtensions);
                 if (ext.TitleBarExtensions != null)
                     RegisterMenuExtIndex(menuStrip1, ext.TitleBarExtensions, menuStrip1.Items.Count);
-             //   if (ext.MapEditorMenuExtensions != null)
-               //     RegisterMenuExtIndex(mapEditorsToolStripMenuItem, ext.MapEditorMenuExtensions, mapEditorsToolStripMenuItem.DropDownItems.Count);
+                //   if (ext.MapEditorMenuExtensions != null)
+                //     RegisterMenuExtIndex(mapEditorsToolStripMenuItem, ext.MapEditorMenuExtensions, mapEditorsToolStripMenuItem.DropDownItems.Count);
             }
         }
 
@@ -670,26 +701,32 @@ namespace Toolbox
             foreach (IFileMenuExtension ext in FileMenuExtensions)
             {
                 if (ext.NewFileMenuExtensions != null)
-                    RegisterMenuExtIndex(newToolStripMenuItem, ext.NewFileMenuExtensions, newToolStripMenuItem.DropDownItems.Count);
+                    RegisterMenuExtIndex(newToolStripMenuItem, ext.NewFileMenuExtensions,
+                        newToolStripMenuItem.DropDownItems.Count);
                 if (ext.NewFromFileMenuExtensions != null)
-                    RegisterMenuExtIndex(newFromFileToolStripMenuItem, ext.NewFromFileMenuExtensions, newFromFileToolStripMenuItem.DropDownItems.Count);
+                    RegisterMenuExtIndex(newFromFileToolStripMenuItem, ext.NewFromFileMenuExtensions,
+                        newFromFileToolStripMenuItem.DropDownItems.Count);
                 if (ext.ToolsMenuExtensions != null)
                     RegisterMenuExtIndex(toolsToolStripMenuItem, ext.ToolsMenuExtensions);
                 if (ext.TitleBarExtensions != null)
                     RegisterMenuExtIndex(menuStrip1, ext.TitleBarExtensions, menuStrip1.Items.Count);
                 if (ext.ExperimentalMenuExtensions != null)
-                    RegisterMenuExtIndex(experimentalToolStripMenuItem, ext.ExperimentalMenuExtensions, experimentalToolStripMenuItem.DropDownItems.Count);
+                    RegisterMenuExtIndex(experimentalToolStripMenuItem, ext.ExperimentalMenuExtensions,
+                        experimentalToolStripMenuItem.DropDownItems.Count);
                 if (ext.CompressionMenuExtensions != null)
-                    RegisterMenuExtIndex(compressionToolStripMenuItem, ext.CompressionMenuExtensions, compressionToolStripMenuItem.DropDownItems.Count);
+                    RegisterMenuExtIndex(compressionToolStripMenuItem, ext.CompressionMenuExtensions,
+                        compressionToolStripMenuItem.DropDownItems.Count);
             }
         }
+
         void RegisterMenuExtIndex(ToolStrip target, ToolStripButton[] list, int index = 0)
         {
             foreach (var i in list)
             {
-                  target.Items.Insert(index++, i);
+                target.Items.Insert(index++, i);
             }
         }
+
         void RegisterMenuExtIndex(ToolStripMenuItem target, STToolStripItem[] list, int index = 0)
         {
             foreach (STToolStripItem i in list)
@@ -724,7 +761,7 @@ namespace Toolbox
         }
 
 
-        void MergeDuplicateMenus(STToolStripItem src, STToolStripItem dest )
+        void MergeDuplicateMenus(STToolStripItem src, STToolStripItem dest)
         {
             dest.DropDownItems.AddRange(src.DropDownItems);
         }
@@ -758,6 +795,7 @@ namespace Toolbox
                 }
             }
         }
+
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Application.Exit();
@@ -779,10 +817,12 @@ namespace Toolbox
                     if (((IFIleEditor)control).GetFileFormats().Count > 0)
                         return ((IFIleEditor)control).GetFileFormats()[0];
                 }
+
                 if (control != null && control is ImageEditorBase)
                 {
                     return (IFileFormat)((ImageEditorBase)control).ActiveTexture;
                 }
+
                 if (control != null && control is AudioPlayerPanel)
                 {
                     return ((AudioPlayerPanel)control).AudioFileFormats[0];
@@ -805,6 +845,7 @@ namespace Toolbox
 
             return null;
         }
+
         private void SetFormatSettings(IFileFormat format)
         {
             ResetMenus();
@@ -837,17 +878,21 @@ namespace Toolbox
             {
                 if (menuExtensions.EditMenuExtensions != null)
                 {
-                    RegisterMenuExtIndex(editToolStripMenuItem, menuExtensions.EditMenuExtensions, editToolStripMenuItem.DropDownItems.Count);
+                    RegisterMenuExtIndex(editToolStripMenuItem, menuExtensions.EditMenuExtensions,
+                        editToolStripMenuItem.DropDownItems.Count);
 
                     if (editToolStripMenuItem.DropDownItems.Count > 0)
                         editToolStripMenuItem.Enabled = true;
                 }
+
                 if (menuExtensions.IconButtonMenuExtensions != null)
                 {
-                    RegisterMenuExtIndex(stToolStrip1, menuExtensions.IconButtonMenuExtensions, stToolStrip1.Items.Count);
+                    RegisterMenuExtIndex(stToolStrip1, menuExtensions.IconButtonMenuExtensions,
+                        stToolStrip1.Items.Count);
                 }
             }
         }
+
         private void ResetMenus()
         {
             editToolStripMenuItem.Enabled = false;
@@ -858,6 +903,7 @@ namespace Toolbox
 
 
         #region Events
+
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Control && e.KeyCode == Keys.O) // Ctrl + O Open
@@ -870,7 +916,7 @@ namespace Toolbox
                 e.SuppressKeyPress = true;
                 SaveActiveFile(true);
             }
-            else if(e.Control && e.KeyCode == Keys.S) // Ctrl + S Save
+            else if (e.Control && e.KeyCode == Keys.S) // Ctrl + S Save
             {
                 e.SuppressKeyPress = true;
                 SaveActiveFile(false);
@@ -882,15 +928,18 @@ namespace Toolbox
             }
         }
 
-        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
             SaveActiveFile();
         }
 
-        private void saveToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
             SaveActiveFile(false);
         }
 
-        private void saveToolStripButton_Click(object sender, EventArgs e) {
+        private void saveToolStripButton_Click(object sender, EventArgs e)
+        {
             SaveActiveFile(false);
         }
 
@@ -903,7 +952,6 @@ namespace Toolbox
 
         private void tileHorizontalToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
             this.SuspendLayout();
 
             foreach (Form frm in this.MdiChildren) frm.FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -982,7 +1030,6 @@ namespace Toolbox
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
         }
 
         private void MainForm_DragEnter(object sender, DragEventArgs e)
@@ -1000,7 +1047,7 @@ namespace Toolbox
 
         private void MainForm_DragDrop(object sender, DragEventArgs e)
         {
-                        if (!Runtime.EnableDragDrop) return;
+            if (!Runtime.EnableDragDrop) return;
 
             Cursor.Current = Cursors.WaitCursor;
 
@@ -1047,6 +1094,7 @@ namespace Toolbox
         }
 
         bool IsChanged = false;
+
         private void MainForm_MdiChildActivate(object sender, EventArgs e)
         {
             if (this.ActiveMdiChild == null)
@@ -1080,6 +1128,7 @@ namespace Toolbox
                             tabForms.SelectedIndex = tpIndex;
                             return;
                         }
+
                         tpIndex++;
                     }
 
@@ -1110,20 +1159,22 @@ namespace Toolbox
                         {
                             tabForms.SelectedIndex = tpIndex;
 
-                            if (ActiveMdiChild is STForm) {
-                                if (ActiveMdiChild.WindowState == FormWindowState.Maximized) {
+                            if (ActiveMdiChild is STForm)
+                            {
+                                if (ActiveMdiChild.WindowState == FormWindowState.Maximized)
+                                {
                                     ((STForm)ActiveMdiChild).MDIMaximized();
                                 }
                             }
 
                             return;
                         }
+
                         tpIndex++;
                     }
                 }
 
                 if (!tabForms.Visible) tabForms.Visible = true;
-
             }
         }
 
@@ -1144,7 +1195,7 @@ namespace Toolbox
         public static extern int SendMessage(IntPtr hWnd, Int32 wMsg, bool wParam, Int32 lParam);
 
         private void ActiveMdiChild_FormClosed(object sender,
-                                    FormClosedEventArgs e)
+            FormClosedEventArgs e)
         {
             ((sender as Form).Tag as TabPage).Dispose();
         }
@@ -1189,73 +1240,65 @@ namespace Toolbox
 
         private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
-
         }
 
         private void creditsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-  
         }
 
         private void BtnMinMax_Click(object sender, EventArgs e)
         {
-
         }
 
         private void BtnMinMax_MouseEnter(object sender, EventArgs e)
         {
-
         }
 
         private void BtnMinMax_MouseLeave(object sender, EventArgs e)
         {
-
         }
 
         private void BtnClose_Click(object sender, EventArgs e)
         {
-
         }
 
         private void BtnClose_MouseEnter(object sender, EventArgs e)
         {
-
         }
 
         private void BtnClose_MouseLeave(object sender, EventArgs e)
         {
-
         }
 
-            private void BtnMdiClose_MouseEnter(object sender, System.EventArgs e)
-            {
-                BtnMdiClose.Image = Toolbox.Library.Properties.Resources.Close_Hover;
-            }
+        private void BtnMdiClose_MouseEnter(object sender, System.EventArgs e)
+        {
+            BtnMdiClose.Image = Toolbox.Library.Properties.Resources.Close_Hover;
+        }
 
-            private void BtnMdiClose_MouseLeave(object sender, System.EventArgs e)
-            {
-                BtnMdiClose.Image = Toolbox.Library.Properties.Resources.Close;
-            }
+        private void BtnMdiClose_MouseLeave(object sender, System.EventArgs e)
+        {
+            BtnMdiClose.Image = Toolbox.Library.Properties.Resources.Close;
+        }
 
-            private void BtnMdiMinMax_MouseEnter(object sender, EventArgs e)
-            {
-                BtnMdiMinMax.Image = Toolbox.Library.Properties.Resources.maximize_sele;
-            }
+        private void BtnMdiMinMax_MouseEnter(object sender, EventArgs e)
+        {
+            BtnMdiMinMax.Image = Toolbox.Library.Properties.Resources.maximize_sele;
+        }
 
-            private void BtnMdiMinMax_MouseLeave(object sender, EventArgs e)
-            {
-                BtnMdiMinMax.Image = Toolbox.Library.Properties.Resources.maximize;
-            }
+        private void BtnMdiMinMax_MouseLeave(object sender, EventArgs e)
+        {
+            BtnMdiMinMax.Image = Toolbox.Library.Properties.Resources.maximize;
+        }
 
-            private void BtnMdiMinimize_MouseEnter(object sender, EventArgs e)
-            {
-                BtnMdiMinimize.Image = Toolbox.Library.Properties.Resources.minimize_sele;
-            }
+        private void BtnMdiMinimize_MouseEnter(object sender, EventArgs e)
+        {
+            BtnMdiMinimize.Image = Toolbox.Library.Properties.Resources.minimize_sele;
+        }
 
-            private void BtnMdiMinimize_MouseLeave(object sender, EventArgs e)
-            {
-                BtnMdiMinimize.Image = Toolbox.Library.Properties.Resources.minimize;
-            }
+        private void BtnMdiMinimize_MouseLeave(object sender, EventArgs e)
+        {
+            BtnMdiMinimize.Image = Toolbox.Library.Properties.Resources.minimize;
+        }
 
         private void BtnMdiClose_Click(object sender, EventArgs e)
         {
@@ -1284,7 +1327,8 @@ namespace Toolbox
                 ActiveMdiChild.WindowState = FormWindowState.Minimized;
         }
 
-        private void updateToolstrip_Click(object sender, EventArgs e) {
+        private void updateToolstrip_Click(object sender, EventArgs e)
+        {
             UpdateNotifcationClick();
         }
 
@@ -1305,6 +1349,7 @@ namespace Toolbox
                 form = new STConsoleForm();
                 form.Show(this);
             }
+
             form.Focus();
         }
 
@@ -1319,25 +1364,28 @@ namespace Toolbox
             System.Diagnostics.Process.Start("https://github.com/KillzXGaming/Switch-Toolbox");
         }
 
-        private void reportBugToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void reportBugToolStripMenuItem_Click(object sender, EventArgs e)
+        {
             System.Diagnostics.Process.Start("https://github.com/KillzXGaming/Switch-Toolbox/issues");
         }
 
-        private void requestFeatureToolStripMenuItem1_Click(object sender, EventArgs e) {
+        private void requestFeatureToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
             System.Diagnostics.Process.Start("https://github.com/KillzXGaming/Switch-Toolbox/issues");
         }
 
-        private void tutorialToolStripMenuItem_Click(object sender, EventArgs e) {
+        private void tutorialToolStripMenuItem_Click(object sender, EventArgs e)
+        {
             System.Diagnostics.Process.Start("https://github.com/KillzXGaming/Switch-Toolbox/wiki");
         }
 
         private void checkShaderErrorsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             ShaderTools.SaveErrorLogs();
-
         }
 
-        private void MainForm_FormClosing(object sender, FormClosingEventArgs e) {
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
             if (tabForms.TabPages.Count > 0)
             {
                 if (Runtime.ShowCloseDialog)
@@ -1375,9 +1423,90 @@ namespace Toolbox
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 FolderSelectDialog folderDlg = new FolderSelectDialog();
-                if (folderDlg.ShowDialog() == DialogResult.OK) {
+                if (folderDlg.ShowDialog() == DialogResult.OK)
+                {
                     BatchExportTextures(ofd.FileNames, folderDlg.SelectedPath);
                 }
+            }
+        }
+
+        private void hydosAtHome(object sender, EventArgs e)
+        {
+            using (var fbd = new FolderBrowserDialog())
+            {
+                var result = fbd.ShowDialog();
+
+                if (result != DialogResult.OK || string.IsNullOrWhiteSpace(fbd.SelectedPath)) return;
+                var d = dialogue();
+                if (d.ShowDialog() != DialogResult.OK) return;
+                
+                var tasks = new List<Task>();
+                
+                foreach (var filePath in Directory.EnumerateFiles(fbd.SelectedPath, "*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        if (filePath.EndsWith(".bntx"))
+                        {
+                            tasks.Add(Task.Factory.StartNew(() =>
+                            {
+                                hydos2(d, new[] { filePath }, Path.GetDirectoryName(filePath));
+                            }));
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine(exception);
+                    }
+
+                }
+                
+                Task.WaitAll(tasks.ToArray());
+                Console.WriteLine("All tasks have completed.");
+            }
+        }
+
+        private BatchFormatExport dialogue()
+        {
+            var formats = new List<string>
+            {
+                "Portable Graphics Network (.png)",
+                "Microsoft DDS (.dds)",
+                "Joint Photographic Experts Group (.jpg)",
+                "Bitmap Image (.bmp)",
+                "Tagged Image File Format (.tiff)",
+                "ASTC (.astc)"
+            };
+            failedFiles = new List<string>();
+            return new BatchFormatExport(formats);
+        }
+
+        private void hydos2(BatchFormatExport form, string[] files, string outputFolder)
+        {
+            string extension = form.GetSelectedExtension();
+            foreach (var file in files)
+            {
+                IFileFormat fileFormat = null;
+                try
+                {
+                    fileFormat = STFileLoader.OpenFileFormat(file);
+                }
+                catch (Exception ex)
+                {
+                    failedFiles.Add($"{file} \n Error:\n {ex} \n");
+                }
+                
+                SearchFileFormat(form.BatchSettings, fileFormat, extension, outputFolder, ExportMode.Textures);
+            }
+
+            batchExportFileList.Clear();
+
+
+            if (failedFiles.Count <= 0) return;
+            {
+                var detailList = failedFiles.Aggregate("", (current, file) => current + $"{file}\n");
+                Console.WriteLine("Some files failed to export! See detail list of failed files.");
+                Console.WriteLine(detailList);
             }
         }
 
@@ -1390,7 +1519,8 @@ namespace Toolbox
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 FolderSelectDialog folderDlg = new FolderSelectDialog();
-                if (folderDlg.ShowDialog() == DialogResult.OK) {
+                if (folderDlg.ShowDialog() == DialogResult.OK)
+                {
                     BatchExportModels(ofd.FileNames, folderDlg.SelectedPath);
                 }
             }
@@ -1398,6 +1528,7 @@ namespace Toolbox
 
         private List<string> failedFiles = new List<string>();
         private List<string> batchExportFileList = new List<string>();
+
         private void BatchExportModels(string[] files, string outputFolder)
         {
             List<string> Formats = new List<string>();
@@ -1423,6 +1554,7 @@ namespace Toolbox
 
                     SearchFileFormat(form.BatchSettings, fileFormat, extension, outputFolder, ExportMode.Models);
                 }
+
                 batchExportFileList.Clear();
             }
             else
@@ -1434,7 +1566,8 @@ namespace Toolbox
                 foreach (var file in failedFiles)
                     detailList += $"{file}\n";
 
-                STErrorDialog.Show("Some files failed to export! See detail list of failed files.", "Switch Toolbox", detailList);
+                STErrorDialog.Show("Some files failed to export! See detail list of failed files.", "Switch Toolbox",
+                    detailList);
             }
             else
                 MessageBox.Show("Files batched successfully!");
@@ -1450,7 +1583,7 @@ namespace Toolbox
             Formats.Add("Tagged Image File Format (.tiff)");
             Formats.Add("ASTC (.astc)");
 
-           failedFiles = new List<string>();
+            failedFiles = new List<string>();
 
             BatchFormatExport form = new BatchFormatExport(Formats);
             if (form.ShowDialog() == DialogResult.OK)
@@ -1461,7 +1594,7 @@ namespace Toolbox
                     IFileFormat fileFormat = null;
                     try
                     {
-                         fileFormat = STFileLoader.OpenFileFormat(file);
+                        fileFormat = STFileLoader.OpenFileFormat(file);
                     }
                     catch (Exception ex)
                     {
@@ -1470,6 +1603,7 @@ namespace Toolbox
 
                     SearchFileFormat(form.BatchSettings, fileFormat, extension, outputFolder, ExportMode.Textures);
                 }
+
                 batchExportFileList.Clear();
             }
 
@@ -1479,18 +1613,20 @@ namespace Toolbox
                 foreach (var file in failedFiles)
                     detailList += $"{file}\n";
 
-                STErrorDialog.Show("Some files failed to export! See detail list of failed files.", "Switch Toolbox", detailList);
+                STErrorDialog.Show("Some files failed to export! See detail list of failed files.", "Switch Toolbox",
+                    detailList);
             }
             else
                 MessageBox.Show("Files batched successfully!");
         }
 
-        private void SearchFileFormat(BatchFormatExport.Settings settings, IFileFormat fileFormat, 
+        private void SearchFileFormat(BatchFormatExport.Settings settings, IFileFormat fileFormat,
             string extension, string outputFolder, ExportMode exportMode)
         {
             if (fileFormat == null) return;
 
-            if (fileFormat is STGenericTexture && exportMode == ExportMode.Textures) {
+            if (fileFormat is STGenericTexture && exportMode == ExportMode.Textures)
+            {
                 string name = ((STGenericTexture)fileFormat).Text;
                 ExportTexture(((STGenericTexture)fileFormat), settings, $"{outputFolder}/{name}", extension);
             }
@@ -1508,7 +1644,8 @@ namespace Toolbox
                         Directory.CreateDirectory(outputFolder);
                 }
 
-                foreach (STGenericTexture tex in ((ITextureContainer)fileFormat).TextureList) {
+                foreach (STGenericTexture tex in ((ITextureContainer)fileFormat).TextureList)
+                {
                     ExportTexture(tex, settings, $"{outputFolder}/{tex.Text}", extension);
                 }
             }
@@ -1570,7 +1707,9 @@ namespace Toolbox
             Textures,
         }
 
-        private void ExportTexture(STGenericTexture tex, BatchFormatExport.Settings settings, string filePath, string ext) {
+        private void ExportTexture(STGenericTexture tex, BatchFormatExport.Settings settings, string filePath,
+            string ext)
+        {
             filePath = Utils.RenameDuplicateString(batchExportFileList, filePath, 0, 3);
             batchExportFileList.Add(filePath);
 
@@ -1587,7 +1726,8 @@ namespace Toolbox
         {
             string ArchiveFilePath = outputFolder;
             if (settings.SeperateArchiveFiles)
-                ArchiveFilePath = Path.Combine(outputFolder, Path.GetFileNameWithoutExtension(((IFileFormat)archiveFile).FileName));
+                ArchiveFilePath = Path.Combine(outputFolder,
+                    Path.GetFileNameWithoutExtension(((IFileFormat)archiveFile).FileName));
 
             foreach (var file in archiveFile.Files)
             {
@@ -1609,7 +1749,8 @@ namespace Toolbox
 
         private void openUserFolderToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SwitchToolbox");
+            var userDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "SwitchToolbox");
             if (!Directory.Exists(userDir))
                 Directory.CreateDirectory(userDir);
 
